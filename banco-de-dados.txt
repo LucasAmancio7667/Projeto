@@ -47,7 +47,6 @@ INSERT INTO users (username, password_hash, full_name, role, student_id, last_lo
 ('professor', 'scrypt:32768:8:1$t7OyXy7NDbPAqplM$a0e9a7ba25f8308f5b92e54b357a6a9db5dfe6c6bbef4f0238443c39c1e2e701dae69b710dbe1debd86eedd6bfc46e7c2c01f69c9c77fdfb8c940f05696007bc', 'Prof. Silva', 'teacher', NULL, NULL, 0, 'Offline')
 ON DUPLICATE KEY UPDATE password_hash=VALUES(password_hash), full_name=VALUES(full_name), role=VALUES(role);
 
-drop table users;
 -- 3. Cria a tabela 'classes'
 CREATE TABLE IF NOT EXISTS classes (
     id INT AUTO_INCREMENT PRIMARY KEY,
