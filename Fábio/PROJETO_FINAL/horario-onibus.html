@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horário do Ônibus - Curso de Scratch</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="main-layout">
+        <header class="header">
+            <div class="logo">
+                <img src=img/scratch.png height=50px width=50px alt="Scratch Logo" id="scratch-logo">
+            </div>
+            <nav>
+                <ul class="nav-menu">
+                    <li id="navDiarioClasseAluno"><a href="dashboard.html">Diário de Classe</a></li>
+                    <li id="navMateriaisAluno"><a href="materials.html">Materiais</a></li>
+
+                    <li id="navAdmin"><a href="admin.html">Administração de Usuários</a></li>
+                    <li id="navBancoDados"><a href="database.html">Banco de Dados</a></li>
+                    <li id="navDiarioClasseProf"><a href="teacher-diary.html">Diário de Classe</a></li>
+                    <li id="navMateriaisProf"><a href="teacher-materials.html">Materiais</a></li>
+
+                    <li class="dropdown">
+                        <a href="#">Links Externos ▼</a>
+                        <div class="dropdown-content">
+                            <a href="https://scratch.mit.edu/" target="_blank">Scratch Site</a>
+                            <a href="https://scratch.mit.edu/projects/editor/" target="_blank">Editor do Scratch</a>
+                            <a href="https://scratch.mit.edu/ideas" target="_blank">Ideias de Projetos</a>
+                            <a href="https://www.youtube.com/results?search_query=scratch+tutorial+português" target="_blank">Tutoriais YouTube</a>
+                            <a href="https://wayground.com/home-v1?lng=pt-BR" target="_blank">Wayground (Quizizz)</a>
+                        </div>
+                    </li>
+                    <li class="dropdown">
+                        <a href="#">Informações ▼</a>
+                        <div class="dropdown-content">
+                            <a href="horario-onibus.html">Horário do Ônibus</a>
+                            <a href="calendario-aulas.html">Calendário das Aulas</a>
+                            <a href="#" onclick="abrirWhatsApp()">Link do grupo do WhatsApp</a>
+                            <a href="endereco-aula.html">Endereço do Local das Aulas</a>
+                            <a href="contato.html">Contato</a>
+                        </div>
+                    </li>
+                </ul>
+            </nav>
+            <div class="user-profile">
+                <div class="user-avatar"><img src=img/icon-user.png height=40px width=40px alt="Icone do Perfil"></div>
+            </div>
+        </header>
+        
+        <main class="content">
+            <div class="pdf-redirect-container">
+                <div class="info-card">
+                    <div class="redirect-content">
+                        <div class="icon">🚌</div>
+                        <h1>Horário do Ônibus</h1>
+                        <p>Clique no botão abaixo para visualizar os horários do ônibus IFPE - Campus Belo Jardim</p>
+                        
+                        <div class="action-buttons">
+                            <button class="action-btn primary" onclick="abrirPDF()">
+                                📄 Ver Horários (PDF)
+                            </button>
+                            <button class="action-btn secondary" onclick="baixarPDF()">
+                                📥 Baixar PDF
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="script.js"></script>
+    <script>
+        // Substitua pelo caminho real do seu PDF
+        const pdfUrl = "arquivos/ROTEIRO-DO-ONIBUS-1.pdf";
+        
+        function abrirPDF() {
+            window.open(pdfUrl, '_blank');
+        }
+        
+        async function baixarPDF() {
+            try {
+                // Método mais compatível para download
+                const response = await fetch(pdfUrl);
+                
+                if (!response.ok) {
+                    throw new Error('Arquivo não encontrado');
+                }
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'Horario-Onibus-IFPE.pdf';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+                
+            } catch (error) {
+                console.error('Erro ao baixar:', error);
+                // Fallback: abrir em nova aba se não conseguir baixar
+                alert('Não foi possível baixar o arquivo. Abrindo em nova aba...');
+                window.open(pdfUrl, '_blank');
+            }
+        }
+
+        function abrirWhatsApp() {
+            const whatsappLink = "https://chat.whatsapp.com/GHZuEpQhb5uGFROPWioy9o?mode=ac_c";
+            window.open(whatsappLink, '_blank');
+        }
+        
+    </script>
+    
+    <style>
+        .pdf-redirect-container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        
+        .info-card {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .redirect-content .icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+        
+        .redirect-content h1 {
+            color: #4a90e2;
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+        
+        .redirect-content p {
+            color: #666;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .pdf-redirect-container {
+                margin: 20px auto;
+                padding: 10px;
+            }
+            
+            .info-card {
+                padding: 30px 20px;
+            }
+            
+            .redirect-content h1 {
+                font-size: 1.5rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .action-btn {
+                width: 100%;
+                max-width: 250px;
+            }
+        }
+    </style>
+</body>
+</html>

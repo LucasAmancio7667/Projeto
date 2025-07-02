@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendário das Aulas - Curso de Scratch</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="main-layout">
+        <header class="header">
+            <div class="logo">
+                <img src=img/scratch.png height=50px width=50px alt="Scratch Logo" id="scratch-logo">
+            </div>
+            <nav>
+                <ul class="nav-menu">
+                    <li id="navDiarioClasseAluno"><a href="dashboard.html">Diário de Classe</a></li>
+                    <li id="navMateriaisAluno"><a href="materials.html">Materiais</a></li>
+
+                    <li id="navAdmin"><a href="admin.html">Administração de Usuários</a></li>
+                    <li id="navBancoDados"><a href="database.html">Banco de Dados</a></li>
+                    <li id="navDiarioClasseProf"><a href="teacher-diary.html">Diário de Classe</a></li>
+                    <li id="navMateriaisProf"><a href="teacher-materials.html">Materiais</a></li>
+
+                    <li class="dropdown">
+                        <a href="#">Links Externos ▼</a>
+                        <div class="dropdown-content">
+                            <a href="https://scratch.mit.edu/" target="_blank">Scratch Site</a>
+                            <a href="https://scratch.mit.edu/projects/editor/" target="_blank">Editor do Scratch</a>
+                            <a href="https://scratch.mit.edu/ideas" target="_blank">Ideias de Projetos</a>
+                            <a href="https://www.youtube.com/results?search_query=scratch+tutorial+português" target="_blank">Tutoriais YouTube</a>
+                            <a href="https://wayground.com/home-v1?lng=pt-BR" target="_blank">Wayground (Quizizz)</a>
+                        </div>
+                    </li>
+                    <li class="dropdown">
+                        <a href="#">Informações ▼</a>
+                        <div class="dropdown-content">
+                            <a href="horario-onibus.html">Horário do Ônibus</a>
+                            <a href="calendario-aulas.html">Calendário das Aulas</a>
+                            <a href="#" onclick="abrirWhatsApp()">Link do grupo do WhatsApp</a>
+                            <a href="endereco-aula.html">Endereço do Local das Aulas</a>
+                            <a href="contato.html">Contato</a>
+                        </div>
+                    </li>
+                </ul>
+            </nav>
+            <div class="user-profile">
+                <div class="user-avatar"><img src=img/icon-user.png height=40px width=40px alt="Icone do Perfil"></div>
+            </div>
+        </header>
+        
+        <main class="content">
+            <h1 class="page-title">📅 Calendário das Aulas</h1>
+            
+            <div class="calendar-container">
+                <div class="info-card">
+                    <div class="schedule-info">
+                        <h2>🕐 Horário Fixo das Aulas</h2>
+                        <div class="fixed-schedule">
+                            <div class="time-info">
+                                <span class="time-label">Horário:</span>
+                                <span class="time-value">19:00 às 22:00</span>
+                            </div>
+                            <div class="duration-info">
+                                <span class="duration-label">Duração:</span>
+                                <span class="duration-value">3 horas por aula</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="teacherControls" class="teacher-controls" style="display: none;">
+                        <h3>👨‍🏫 Controles do Professor</h3>
+                        <div class="control-buttons">
+                            <button class="action-btn" onclick="adicionarAula()">➕ Adicionar Aula</button>
+                            <button class="action-btn secondary" onclick="editarAula()">✏️ Editar Aula Selecionada</button>
+                            <button class="action-btn danger" onclick="removerAula()">🗑️ Remover Aula</button>
+                        </div>
+                    </div>
+                    
+                    <div class="calendar-grid">
+                        <h3>📋 Cronograma das Aulas</h3>
+                        <div id="classSchedule" class="class-schedule">
+                            <!-- Aulas serão carregadas aqui -->
+                        </div>
+                    </div>
+                    
+                    <div class="legend">
+                        <h3>📖 Legenda</h3>
+                        <div class="legend-items">
+                            <div class="legend-item">
+                                <span class="legend-color completed"></span>
+                                <span>Aula Realizada</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-color current"></span>
+                                <span>Próxima Aula</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-color future"></span>
+                                <span>Aulas Futuras</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-color cancelled"></span>
+                                <span>Aula Cancelada</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Modal de Edição/Adição de Aula -->
+    <div id="editModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle"></h3> <!-- Título dinâmico para Adicionar/Editar -->
+                <button class="close-btn" onclick="fecharModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="classForm">
+                    <input type="hidden" id="classId"> <!-- Campo oculto para o ID da aula -->
+                    <div class="form-group">
+                        <label for="classTitle">Título da Aula:</label>
+                        <input type="text" id="classTitle" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="classDate">Data:</label>
+                        <input type="date" id="classDate" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="classStatus">Status:</label>
+                        <select id="classStatus">
+                            <option value="future">Futura</option>
+                            <option value="current">Próxima</option>
+                            <option value="completed">Realizada</option>
+                            <option value="cancelled">Cancelada</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="classDescription">Descrição:</label>
+                        <textarea id="classDescription" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn secondary" onclick="fecharModal()">Cancelar</button>
+                <button class="action-btn primary" onclick="salvarAula()">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação de Exclusão -->
+    <div id="deleteConfirmModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🗑️ Confirmar Exclusão</h3>
+                <button class="close-btn" onclick="fecharDeleteConfirmModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza de que deseja remover a aula <strong id="deleteClassTitleConfirm"></strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn danger" onclick="confirmarRemocaoAula()">Remover</button>
+                <button class="action-btn secondary" onclick="fecharDeleteConfirmModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Mensagem (para substituir alerts) -->
+    <div id="messageModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="messageModalTitle"></h3>
+                <button class="close-btn" onclick="closeMessageModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p id="messageModalText"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn primary" onclick="closeMessageModal()">OK</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+    <script>
+        let allFetchedClasses = []; // Armazena todas as aulas buscadas do backend
+        let selectedClassId = null; // ID da aula atualmente selecionada para edição/remoção
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadSchedule();
+            // Lógica para mostrar/esconder controles do professor (já existente no seu script.js)
+            const userRole = localStorage.getItem('userRole');
+            if (userRole === 'teacher') { // 'admin' também é 'teacher' no backend agora
+                document.getElementById('teacherControls').style.display = 'block';
+            } else {
+                // Para alunos, remover a funcionalidade de seleção de aula
+                document.querySelectorAll('.class-item').forEach(item => {
+                    item.style.cursor = 'default';
+                    item.onclick = null; // Remove o evento de clique para alunos
+                });
+            }
+
+            // Fechar modal ao clicar fora
+            document.getElementById('editModal').addEventListener('click', (e) => {
+                if (e.target.id === 'editModal') {
+                    fecharModal();
+                }
+            });
+            document.getElementById('deleteConfirmModal').addEventListener('click', (e) => {
+                if (e.target.id === 'deleteConfirmModal') {
+                    fecharDeleteConfirmModal();
+                }
+            });
+        });
+
+        // Função para exibir o modal de mensagem
+        function showMessageModal(title, message) {
+            document.getElementById('messageModalTitle').textContent = title;
+            document.getElementById('messageModalText').textContent = message;
+            document.getElementById('messageModal').classList.remove('hidden');
+        }
+
+        // Função para fechar o modal de mensagem
+        function closeMessageModal() {
+            document.getElementById('messageModal').classList.add('hidden');
+        }
+
+        // Função para carregar o cronograma de aulas do backend
+        async function loadSchedule() {
+            const scheduleContainer = document.getElementById('classSchedule');
+            scheduleContainer.innerHTML = ''; // Limpa o conteúdo existente
+            try {
+                const response = await fetch('http://127.0.0.1:5000/classes');
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP! Status: ${response.status}`);
+                }
+                allFetchedClasses = await response.json(); // Armazena as aulas para uso posterior
+                
+                if (allFetchedClasses.length === 0) {
+                    scheduleContainer.innerHTML = '<p style="text-align: center; color: #666;">Nenhuma aula cadastrada. Adicione uma nova aula!</p>';
+                    return;
+                }
+
+                allFetchedClasses.forEach(classItem => {
+                    const classDiv = document.createElement('div');
+                    classDiv.className = `class-item ${classItem.status}`;
+                    classDiv.dataset.id = classItem.id; // Armazena o ID no dataset para fácil acesso
+
+                    // Adiciona o evento de clique APENAS para professores/admins
+                    const userRole = localStorage.getItem('userRole');
+                    if (userRole === 'teacher') {
+                        classDiv.onclick = () => selectClass(classItem.id);
+                        classDiv.style.cursor = 'pointer';
+                    } else {
+                        classDiv.style.cursor = 'default'; // Para alunos, não clicável
+                    }
+                    
+                    const dateObj = new Date(classItem.date + 'T19:00:00'); // Adiciona hora para evitar problemas de fuso horário
+                    const formattedDate = dateObj.toLocaleDateString('pt-BR', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+                    
+                    classDiv.innerHTML = `
+                        <div class="class-header">
+                            <h4>${classItem.title}</h4>
+                            <span class="class-status">${getStatusText(classItem.status)}</span>
+                        </div>
+                        <div class="class-date">📅 ${formattedDate}</div>
+                        <div class="class-time">🕐 19:00 às 22:00</div>
+                        <div class="class-description">${classItem.description || 'Sem descrição.'}</div>
+                    `;
+                    
+                    scheduleContainer.appendChild(classDiv);
+                });
+            } catch (error) {
+                console.error('Erro ao buscar aulas do backend:', error);
+                scheduleContainer.innerHTML = '<p style="text-align: center; color: red;">Erro ao carregar o cronograma de aulas.</p>';
+                showMessageModal('Erro', 'Não foi possível carregar o cronograma de aulas.');
+            }
+        }
+        
+        function getStatusText(status) {
+            const statusMap = {
+                'completed': 'Realizada',
+                'current': 'Próxima',
+                'future': 'Futura',
+                'cancelled': 'Cancelada'
+            };
+            return statusMap[status] || status;
+        }
+        
+        function selectClass(classId) {
+            // Remove seleção anterior
+            document.querySelectorAll('.class-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            // Adiciona seleção atual
+            const selectedDiv = document.querySelector(`.class-item[data-id="${classId}"]`);
+            if (selectedDiv) {
+                selectedDiv.classList.add('selected');
+            }
+            selectedClassId = classId;
+            console.log('Aula selecionada:', selectedClassId);
+        }
+        
+        // Função para abrir o modal de adição de aula
+        function adicionarAula() {
+            selectedClassId = null; // Garante que é uma nova aula
+            document.getElementById('modalTitle').textContent = '➕ Adicionar Nova Aula';
+            document.getElementById('classForm').reset(); // Limpa o formulário
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+        
+        // Função para abrir o modal de edição de aula
+        async function editarAula() {
+            if (!selectedClassId) {
+                showMessageModal('Atenção', 'Selecione uma aula para editar.');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`http://127.0.0.1:5000/classes/${selectedClassId}`);
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP! Status: ${response.status}`);
+                }
+                const classItem = await response.json();
+
+                if (classItem) {
+                    document.getElementById('modalTitle').textContent = '✏️ Editar Aula';
+                    document.getElementById('classId').value = classItem.id;
+                    document.getElementById('classTitle').value = classItem.title;
+                    document.getElementById('classDate').value = classItem.date; // Formato YYYY-MM-DD
+                    document.getElementById('classStatus').value = classItem.status;
+                    document.getElementById('classDescription').value = classItem.description || '';
+                    
+                    document.getElementById('editModal').classList.remove('hidden');
+                } else {
+                    showMessageModal('Erro', 'Aula não encontrada para edição.');
+                }
+            } catch (error) {
+                console.error('Erro ao buscar dados da aula para edição:', error);
+                showMessageModal('Erro', 'Não foi possível carregar os dados da aula para edição.');
+            }
+        }
+        
+        // Função para remover aula
+        function removerAula() {
+            if (!selectedClassId) {
+                showMessageModal('Atenção', 'Selecione uma aula para remover.');
+                return;
+            }
+            const classItem = allFetchedClasses.find(c => c.id === selectedClassId);
+            if (classItem) {
+                document.getElementById('deleteClassTitleConfirm').textContent = classItem.title;
+                document.getElementById('deleteConfirmModal').classList.remove('hidden');
+            } else {
+                showMessageModal('Erro', 'Aula não encontrada para remoção.');
+            }
+        }
+
+        // Função para confirmar a remoção da aula após o modal de confirmação
+        async function confirmarRemocaoAula() {
+            if (!selectedClassId) {
+                showMessageModal('Erro', 'Nenhuma aula selecionada para remoção.');
+                return;
+            }
+            try {
+                const response = await fetch(`http://127.0.0.1:5000/classes/delete/${selectedClassId}`, {
+                    method: 'DELETE',
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showMessageModal('Sucesso', 'Aula removida com sucesso!');
+                    fecharDeleteConfirmModal();
+                    await loadSchedule(); // Recarrega a lista de aulas
+                    selectedClassId = null; // Limpa a seleção
+                } else {
+                    showMessageModal('Erro', 'Erro ao remover aula: ' + (data.message || 'Erro desconhecido.'));
+                }
+            } catch (error) {
+                console.error('Erro de rede ou servidor ao remover aula:', error);
+                showMessageModal('Erro', 'Erro de conexão ou servidor ao remover aula.');
+            }
+        }
+        
+        // Função para salvar (adicionar ou editar) aula
+        async function salvarAula() {
+            const title = document.getElementById('classTitle').value;
+            const date = document.getElementById('classDate').value;
+            const status = document.getElementById('classStatus').value;
+            const description = document.getElementById('classDescription').value;
+            
+            if (!title || !date) {
+                showMessageModal('Atenção', 'Título e Data são obrigatórios.');
+                return;
+            }
+
+            const classData = { title, date, status, description };
+            let url = 'http://127.0.0.1:5000/classes/add';
+            let method = 'POST';
+
+            if (selectedClassId) { // Se selectedClassId não for null, estamos editando
+                url = `http://127.0.0.1:5000/classes/edit/${selectedClassId}`;
+                method = 'PUT';
+            }
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(classData),
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessageModal('Sucesso', `Aula ${selectedClassId ? 'atualizada' : 'adicionada'} com sucesso!`);
+                    fecharModal();
+                    await loadSchedule(); // Recarrega a lista de aulas
+                    selectedClassId = null; // Limpa a seleção
+                } else {
+                    showMessageModal('Erro', `Erro ao ${selectedClassId ? 'atualizar' : 'adicionar'} aula: ` + (data.message || 'Erro desconhecido.'));
+                }
+            } catch (error) {
+                console.error('Erro de rede ou servidor ao salvar aula:', error);
+                showMessageModal('Erro', 'Erro de conexão ou servidor ao salvar aula.');
+            }
+        }
+        
+        // Funções para fechar os modais
+        function fecharModal() {
+            document.getElementById('editModal').classList.add('hidden');
+            document.getElementById('classForm').reset(); // Limpa o formulário
+            selectedClassId = null; // Limpa a seleção ao fechar
+            // Remover a classe 'selected' de qualquer item de aula
+            document.querySelectorAll('.class-item.selected').forEach(item => {
+                item.classList.remove('selected');
+            });
+        }
+
+        function fecharDeleteConfirmModal() {
+            document.getElementById('deleteConfirmModal').classList.add('hidden');
+        }
+        
+        // Funções para o perfil de usuário (copiadas de script.js para garantir acesso)
+        function abrirWhatsApp() {
+            const whatsappLink = "https://chat.whatsapp.com/GHZuEpQhb5uGFROPWioy9o?mode=ac_c";
+            window.open(whatsappLink, '_blank');
+        }
+
+        async function logout() {
+            const userId = localStorage.getItem("userId");
+            if (userId) {
+                try {
+                    await fetch(`http://127.0.0.1:5000/logout/${userId}`, {
+                        method: 'POST',
+                    });
+                    console.log('Status online atualizado para offline.');
+                } catch (error) {
+                    console.error('Erro ao atualizar status de logout:', error);
+                }
+            }
+            localStorage.removeItem("isLoggedIn");
+            localStorage.removeItem("userId");
+            localStorage.removeItem("username");
+            localStorage.removeItem("userRole");
+            localStorage.removeItem("userName");
+            localStorage.removeItem("userStudentId");
+            window.location.href = "index.html";
+        }
+
+        const userAvatar = document.querySelector(".user-avatar")
+        if (userAvatar) {
+            userAvatar.addEventListener("click", () => {
+                if (confirm("Deseja fazer logout?")) {
+                    logout()
+                }
+            })
+            userAvatar.style.cursor = "pointer"
+            userAvatar.title = "Clique para fazer logout"
+        }
+    </script>
+    
+    <style>
+        /* Seus estilos CSS existentes aqui (mantidos do seu código original) */
+        .calendar-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .info-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .schedule-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .schedule-info h2 {
+            color: #4a90e2;
+            margin-bottom: 15px;
+        }
+        
+        .fixed-schedule {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .time-info, .duration-info {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .time-label, .duration-label {
+            font-weight: bold;
+            color: #666;
+        }
+        
+        .time-value, .duration-value {
+            font-size: 1.2rem;
+            color: #4a90e2;
+            font-weight: bold;
+        }
+        
+        .teacher-controls {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .teacher-controls h3 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+        
+        .control-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .class-schedule {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .class-item {
+            border: 2px solid #f0f0f0;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .class-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .class-item.selected {
+            border-color: #4a90e2;
+            background: #f0f8ff;
+        }
+        
+        .class-item.completed {
+            border-left: 5px solid #28a745;
+        }
+        
+        .class-item.current {
+            border-left: 5px solid #ffc107;
+            background: #fff8e1;
+        }
+        
+        .class-item.future {
+            border-left: 5px solid #6c757d;
+        }
+        
+        .class-item.cancelled {
+            border-left: 5px solid #dc3545;
+            opacity: 0.7;
+        }
+        
+        .class-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .class-header h4 {
+            margin: 0;
+            color: #333;
+        }
+        
+        .class-status {
+            background: #e9ecef;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .class-date, .class-time {
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .class-description {
+            color: #555;
+            font-style: italic;
+        }
+        
+        .legend {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #f0f0f0;
+        }
+        
+        .legend h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .legend-items {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 4px;
+            border-radius: 2px;
+        }
+        
+        .legend-color.completed {
+            background: #28a745;
+        }
+        
+        .legend-color.current {
+            background: #ffc107;
+        }
+        
+        .legend-color.future {
+            background: #6c757d;
+        }
+        
+        .legend-color.cancelled {
+            background: #dc3545;
+        }
+        
+        .action-btn.danger {
+            background: #dc3545;
+        }
+        
+        .action-btn.danger:hover {
+            background: #c82333;
+        }
+        
+        @media (max-width: 768px) {
+            .fixed-schedule {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .control-buttons {
+                flex-direction: column;
+            }
+            
+            .class-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .legend-items {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</body>
+</html>

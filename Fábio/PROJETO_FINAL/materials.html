@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Materiais - Curso de Scratch</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="main-layout">
+        <header class="header">
+            <div class="logo">
+                <img src=img/scratch.png height=50px width=50px alt="Scratch Logo" id="scratch-logo">
+            </div>
+            <nav>
+                <ul class="nav-menu">
+                    <li id="navDiarioClasseAluno"><a href="dashboard.html">Diário de Classe</a></li>
+                    <li id="navMateriaisAluno"><a href="materials.html">Materiais</a></li>
+
+                    <li id="navAdmin"><a href="admin.html">Administração de Usuários</a></li>
+                    <li id="navBancoDados"><a href="database.html">Banco de Dados</a></li>
+                    <li id="navDiarioClasseProf"><a href="teacher-diary.html">Diário de Classe</a></li>
+                    <li id="navMateriaisProf"><a href="teacher-materials.html">Materiais</a></li>
+
+                    <li class="dropdown">
+                        <a href="#">Links Externos ▼</a>
+                        <div class="dropdown-content">
+                            <a href="https://scratch.mit.edu/" target="_blank">Scratch Site</a>
+                            <a href="https://scratch.mit.edu/projects/editor/" target="_blank">Editor do Scratch</a>
+                            <a href="https://scratch.mit.edu/ideas" target="_blank">Ideias de Projetos</a>
+                            <a href="https://www.youtube.com/results?search_query=scratch+tutorial+português" target="_blank">Tutoriais YouTube</a>
+                            <a href="https://wayground.com/home-v1?lng=pt-BR" target="_blank">Wayground (Quizizz)</a>
+                        </div>
+                    </li>
+                    <li class="dropdown">
+                        <a href="#">Informações ▼</a>
+                        <div class="dropdown-content">
+                            <a href="horario-onibus.html">Horário do Ônibus</a>
+                            <a href="calendario-aulas.html">Calendário das Aulas</a>
+                            <a href="#" onclick="abrirWhatsApp()">Link do grupo do WhatsApp</a>
+                            <a href="endereco-aula.html">Endereço do Local das Aulas</a>
+                            <a href="contato.html">Contato</a>
+                        </div>
+                    </li>
+                </ul>
+            </nav>
+            <div class="user-profile">
+                <div class="user-avatar"><img src=img/icon-user.png height=40px width=40px alt="Icone do Perfil"></div>
+            </div>
+        </header>
+        
+        <main class="content">
+            <h1 class="page-title">Materiais</h1>
+            
+            <div id="materialsList" class="lesson-list">
+                </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+    <script>
+// Carregar materiais do localStorage
+function loadMaterials() {
+    const materialsList = document.getElementById('materialsList');
+    const savedMaterials = localStorage.getItem('courseMaterials');
+    const materials = savedMaterials ? JSON.parse(savedMaterials) : [];
+    const userRole = localStorage.getItem('userRole');
+    
+    materialsList.innerHTML = '';
+    
+    if (materials.length === 0) {
+        materialsList.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">Nenhum material disponível ainda.</p>';
+        return;
+    }
+    
+    materials.forEach(material => {
+        const materialDiv = document.createElement('div');
+        materialDiv.className = 'lesson-item';
+        materialDiv.innerHTML = `
+            <div class="lesson-title">${material.name}</div>
+            <div class="lesson-actions">
+                <button class="action-btn" onclick="downloadMaterial('${material.id}')">📥</button>
+                <button class="action-btn edit-btn" onclick="editMaterial('${material.id}')" style="display: ${userRole === 'teacher' ? 'inline-flex' : 'none'}">✏️</button>
+            </div>
+        `;
+        materialsList.appendChild(materialDiv);
+    });
+}
+
+// Função para download de material
+function downloadMaterial(materialId) {
+    const savedMaterials = localStorage.getItem('courseMaterials');
+    const materials = savedMaterials ? JSON.parse(savedMaterials) : [];
+    const material = materials.find(m => m.id === materialId);
+    
+    if (material) {
+        // Criar link de download
+        const link = document.createElement('a');
+        link.href = material.data;
+        link.download = material.name;
+        link.click();
+        
+        alert(`Baixando: ${material.name}`);
+    }
+}
+
+// Carregar materiais quando a página carrega
+document.addEventListener('DOMContentLoaded', () => {
+    const userRole = localStorage.getItem('userRole');
+    loadMaterials();
+    
+    // Recarregar materiais a cada 5 segundos para sincronizar
+    setInterval(loadMaterials, 5000);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+-- Remove o banco de dados existente se ele existir (para recriar do zero)
+DROP DATABASE IF EXISTS scratch;
+
+-- Cria o banco de dados se ele não existir
+CREATE DATABASE IF NOT EXISTS scratch;
+
+-- Seleciona o banco de dados para uso
+USE scratch;
+
+-- 1. Cria a tabela 'alunos'
+-- Consolida todas as modificações de VARCHAR, UNIQUE, NOT NULL e ENUM em um único CREATE TABLE
+CREATE TABLE IF NOT EXISTS alunos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    turma ENUM('25.1 - T1', '25.1 - T2', '25.2 - T1') NOT NULL,
+    nome VARCHAR(70) NOT NULL,
+    email VARCHAR(50) UNIQUE,
+    telefone VARCHAR(11) UNIQUE,
+    data_nascimento DATE,
+    rg VARCHAR(9) UNIQUE,
+    cpf VARCHAR(11) UNIQUE NOT NULL,
+    endereco VARCHAR(100),
+    -- ATUALIZAÇÃO: Escolaridade agora aceita APENAS '8º ano' e '9º ano'
+    escolaridade ENUM('8º ano', '9º ano') NOT NULL,
+    escola ENUM('Pública', 'Privada') NOT NULL,
+    responsavel VARCHAR(70) NOT NULL
+);
+
+
+-- 2. Cria a tabela 'users'
+-- A coluna 'role' já é definida corretamente como ENUM('student', 'teacher')
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    full_name VARCHAR(255),
+    role ENUM('student', 'teacher') NOT NULL, -- Removido 'admin' para simplificar
+    student_id INT UNIQUE,
+    last_login DATETIME,
+    total_logins INT DEFAULT 0,
+    online_status VARCHAR(20) DEFAULT 'Offline',
+    FOREIGN KEY (student_id) REFERENCES alunos(id) ON DELETE SET NULL
+);
+
+-- Insere usuários iniciais na tabela 'users'
+-- Se um usuário com o mesmo username já existir, ele atualizará password_hash, full_name e role.
+INSERT INTO users (username, password_hash, full_name, role, student_id, last_login, total_logins, online_status) VALUES
+('professor', 'scrypt:32768:8:1$t7OyXy7NDbPAqplM$a0e9a7ba25f8308f5b92e54b357a6a9db5dfe6c6bbef4f0238443c39c1e2e701dae69b710dbe1debd86eedd6bfc46e7c2c01f69c9c77fdfb8c940f05696007bc', 'Prof. Silva', 'teacher', NULL, NULL, 0, 'Offline')
+ON DUPLICATE KEY UPDATE password_hash=VALUES(password_hash), full_name=VALUES(full_name), role=VALUES(role);
+
+drop table users;
+-- 3. Cria a tabela 'classes'
+CREATE TABLE IF NOT EXISTS classes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    date DATE NOT NULL,
+    status ENUM('completed', 'current', 'future', 'cancelled') NOT NULL,
+    description TEXT
+);
+
+-- 4. Cria a tabela 'attendance_records'
+CREATE TABLE IF NOT EXISTS attendance_records (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id INT NOT NULL,
+    class_id INT NOT NULL,
+    attendance_status ENUM('P', 'F', 'Fj') NOT NULL, -- P=Presente, F=Falta, Fj=Falta Justificada
+    recorded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (student_id, class_id), -- Garante um registro por aluno por aula
+    FOREIGN KEY (student_id) REFERENCES alunos(id) ON DELETE CASCADE,
+    FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
+);
+
+-- 5. Cria a tabela 'materials'
+CREATE TABLE IF NOT EXISTS materials (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    file_type VARCHAR(100), -- Ex: 'application/pdf'
+    file_size BIGINT, -- Tamanho em bytes
+    upload_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    description TEXT,
+    file_path VARCHAR(255) -- Caminho ou identificador do arquivo armazenado
+);
+
+-- 6. Cria a tabela 'status_alunos' (para status por aluno)
+CREATE TABLE IF NOT EXISTS status_alunos (
+    id INT PRIMARY KEY, -- Chave Primária e Estrangeira
+    faltas SMALLINT DEFAULT 0,
+    situacao ENUM('Ativo', 'Desistente') DEFAULT 'Ativo',
+    FOREIGN KEY (id) REFERENCES alunos(id) ON DELETE CASCADE
+);
+
+-- 7. Cria a tabela 'atividades_alunos'
+CREATE TABLE IF NOT EXISTS atividades_alunos (
+    id INT PRIMARY KEY, -- Chave Primária e Estrangeira
+    aula_1 ENUM('Pendente', 'Enviada', 'Verificada') DEFAULT 'Pendente',
+    aula_2 ENUM('Pendente', 'Enviada', 'Verificada') DEFAULT 'Pendente',
+    aula_3 ENUM('Pendente', 'Enviada', 'Verificada') DEFAULT 'Pendente',
+    aula_4 ENUM('Pendente', 'Enviada', 'Verificada') DEFAULT 'Pendente',
+    aula_5 ENUM('Pendente', 'Enviada', 'Verificada') DEFAULT 'Pendente',
+    aula_6 ENUM('Pendente', 'Enviada', 'Verificada') DEFAULT 'Pendente',
+    aula_7 ENUM('Pendente', 'Enviada', 'Verificada') DEFAULT 'Pendente',
+    aula_8 ENUM('Pendente', 'Enviada', 'Verificada') DEFAULT 'Pendente',
+    aula_9 ENUM('Pendente', 'Enviada', 'Verificada') DEFAULT 'Pendente',
+    aula_10 ENUM('Pendente', 'Enviada', 'Verificada') DEFAULT 'Pendente',
+    total_enviadas SMALLINT DEFAULT 0,
+    FOREIGN KEY (id) REFERENCES alunos(id) ON DELETE CASCADE
+);
+
+SELECT * FROM attendance_records;
+
+ALTER TABLE users
+DROP FOREIGN KEY users_ibfk_1;
+
+ALTER TABLE users
+ADD CONSTRAINT fk_student_id_cascade -- Dando um nome mais descritivo para a nova constraint
+FOREIGN KEY (student_id) REFERENCES alunos(id) ON DELETE CASCADE;

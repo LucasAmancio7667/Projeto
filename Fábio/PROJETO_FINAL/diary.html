@@ -1,0 +1,87 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diário de Classe - Curso de Scratch</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="main-layout">
+        <header class="header">
+            <div class="logo">
+                <img src=img/scratch.png height=150 width=150 alt="Scratch Logo" id="scratch-logo">
+            </div>
+            <nav>
+                <ul class="nav-menu">
+                    <li><a href="dashboard.html">Diário de Classe</a></li>
+                    <li><a href="materials.html">Materiais</a></li>
+                    <li><a href="activities.html">Atividades</a></li>
+                    <li class="dropdown">
+                        <a href="#">Links Externos ▼</a>
+                        <div class="dropdown-content">
+                            <a href="#">Scratch Website</a>
+                            <a href="#">Tutoriais</a>
+                        </div>
+                    </li>
+                    <li class="dropdown">
+                        <a href="#">Informações ▼</a>
+                        <div class="dropdown-content">
+                            <a href="horario-onibus.html">Horário do Ônibus</a>
+                            <a href="calendario-aulas.html">Calendário das Aulas</a>
+                            <a href="#" onclick="abrirWhatsApp()">Link do grupo do WhatsApp</a>
+                            <a href="endereco-aula.html">Endereço do Local das Aulas</a>
+                            <a href="contato.html">Contato</a>
+                        </div>
+                    </li>
+                </ul>
+            </nav>
+            <div class="user-profile">
+                <div class="user-avatar"><img src=img/icon-user.png height= 40px width= 40px alt="Icone do Perfil"></div>
+            </div>
+        </header>
+        
+        <main class="content">
+            <h1 class="page-title">Diário de Classe</h1>
+            
+            <div class="calendar-container">
+                <div class="student-info">
+                    <strong>Aluno(a): Fulano de Tal</strong>
+                </div>
+                
+                <div class="calendar-grid">
+                    <div class="calendar-header">16/06</div>
+                    <div class="calendar-header">18/06</div>
+                    <div class="calendar-header">25/06</div>
+                    <div class="calendar-header">30/06</div>
+                    <div class="calendar-header">02/07</div>
+                    <div class="calendar-header">07/07</div>
+                    <div class="calendar-header">09/07</div>
+                    <div class="calendar-header">14/07</div>
+                    <div class="calendar-header">16/07</div>
+                    <div class="calendar-header">21/07</div>
+                    <div class="calendar-header">P</div>
+                    <div class="calendar-header">FJ</div>
+                    <div class="calendar-header">F</div>
+                    
+                    <div class="calendar-cell"></div>
+                    <div class="calendar-cell"></div>
+                    <div class="calendar-cell"></div>
+                    <div class="calendar-cell"></div>
+                    <div class="calendar-cell"></div>
+                    <div class="calendar-cell"></div>
+                    <div class="calendar-cell"></div>
+                    <div class="calendar-cell"></div>
+                    <div class="calendar-cell"></div>
+                    <div class="calendar-cell"></div>
+                    <div class="calendar-cell"></div>
+                    <div class="calendar-cell"></div>
+                    <div class="calendar-cell"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Endereço do Local das Aulas - Curso de Scratch</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="main-layout">
+        <header class="header">
+            <div class="logo">
+                <img src=img/scratch.png height=50px width=50px alt="Scratch Logo" id="scratch-logo">
+            </div>
+            <nav>
+                <ul class="nav-menu">
+                    <li id="navDiarioClasseAluno"><a href="dashboard.html">Diário de Classe</a></li>
+                    <li id="navMateriaisAluno"><a href="materials.html">Materiais</a></li>
+
+                    <li id="navAdmin"><a href="admin.html">Administração de Usuários</a></li>
+                    <li id="navBancoDados"><a href="database.html">Banco de Dados</a></li>
+                    <li id="navDiarioClasseProf"><a href="teacher-diary.html">Diário de Classe</a></li>
+                    <li id="navMateriaisProf"><a href="teacher-materials.html">Materiais</a></li>
+
+                    <li class="dropdown">
+                        <a href="#">Links Externos ▼</a>
+                        <div class="dropdown-content">
+                            <a href="https://scratch.mit.edu/" target="_blank">Scratch Site</a>
+                            <a href="https://scratch.mit.edu/projects/editor/" target="_blank">Editor do Scratch</a>
+                            <a href="https://scratch.mit.edu/ideas" target="_blank">Ideias de Projetos</a>
+                            <a href="https://www.youtube.com/results?search_query=scratch+tutorial+português" target="_blank">Tutoriais YouTube</a>
+                            <a href="https://wayground.com/home-v1?lng=pt-BR" target="_blank">Wayground (Quizizz)</a>
+                        </div>
+                    </li>
+                    <li class="dropdown">
+                        <a href="#">Informações ▼</a>
+                        <div class="dropdown-content">
+                            <a href="horario-onibus.html">Horário do Ônibus</a>
+                            <a href="calendario-aulas.html">Calendário das Aulas</a>
+                            <a href="#" onclick="abrirWhatsApp()">Link do grupo do WhatsApp</a>
+                            <a href="endereco-aula.html">Endereço do Local das Aulas</a>
+                            <a href="contato.html">Contato</a>
+                        </div>
+                    </li>
+                </ul>
+            </nav>
+            <div class="user-profile">
+                <div class="user-avatar"><img src=img/icon-user.png height=40px width=40px alt="Icone do Perfil"></div>
+            </div>
+        </header>
+        
+        <main class="content">
+            <h1 class="page-title">📍 Endereço do Local das Aulas</h1>
+            
+            <div class="location-container">
+                <div class="info-card">
+                    <div class="address-section">
+                        <div class="address-info">
+                            <div class="address-item">
+                                <span class="address-label">Endereço:</span>
+                                <span class="address-value">Av. Sebastião Rodrigues da Costa, S/N </span>
+                            </div>
+                            <div class="address-item">
+                                <span class="address-label">Bairro:</span>
+                                <span class="address-value">São Pedro. Belo Jardim – PE</span>
+                            </div>
+                            <div class="address-item">
+                                <span class="address-label">CEP:</span>
+                                <span class="address-value">55155-730</span>
+                            </div>
+                            <div class="address-item">
+                                <span class="address-label">Bloco:</span>
+                                <span class="address-value">D de Engenharia de Software</span>
+                            </div>
+                            <div class="address-item">
+                                <span class="address-label">Ao passar pela Portaria:</span>
+                                <span class="address-value"> Subir a reta e pegar a primeira direita até chegar no bloco de Engenharia de Software, 
+                                                             você deverá entrar no bloco C e ir até o final onde terá uma escada levando a entrada 
+                                                             do bloco D, ao entrar lá, será a primeira sala a esquerda</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="map-section">
+                        <h3>Localização no Mapa</h3>
+                        <div class="map-container">
+                            <iframe 
+                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1395.7668663437428!2d-36.416939599757185!3d-8.320195538496696!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x7a9c7f08822e073%3A0x4c065031e77c29c6!2sEngenharia%20de%20Software%20-%20IFPE!5e0!3m2!1spt-BR!2sbr!4v1751223493476!5m2!1spt-BR!2sbr"
+                                width="100%" 
+                                height="300" 
+                                style="border:0; border-radius: 10px;" 
+                                allowfullscreen="" 
+                                loading="lazy" 
+                                referrerpolicy="no-referrer-when-downgrade">
+                            </iframe>
+                        </div>
+                        <div class="map-actions">
+                            <button class="action-btn" onclick="abrirGoogleMaps()">Abrir no Google Maps</button>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="script.js"></script>
+    <script>
+        function abrirGoogleMaps() {
+            // Coordenadas do local (substitua pelas coordenadas reais)
+            const url = `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1395.7668663437428!2d-36.416939599757185!3d-8.320195538496696!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x7a9c7f08822e073%3A0x4c065031e77c29c6!2sEngenharia%20de%20Software%20-%20IFPE!5e0!3m2!1spt-BR!2sbr!4v1751223493476!5m2!1spt-BR!2sbr"`;
+            window.open(url, '_blank');
+        }
+
+        function abrirWhatsApp() {
+            const whatsappLink = "https://chat.whatsapp.com/GHZuEpQhb5uGFROPWioy9o?mode=ac_c";
+            window.open(whatsappLink, '_blank');
+        }
+    </script>
+    
+    <style>
+        .location-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .info-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .address-section h2 {
+            color: #4a90e2;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .address-info {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .address-item {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .address-label {
+            font-weight: bold;
+            color: #666;
+            min-width: 100px;
+        }
+        
+        .address-value {
+            color: #333;
+            font-size: 1.1rem;
+        }
+        
+        .map-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #f0f0f0;
+        }
+        
+        .map-section h3 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .map-container {
+            margin-bottom: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .map-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        @media (max-width: 768px) {
+            .address-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+            
+            .address-label {
+                min-width: auto;
+            }
+            
+            .direction-item {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .map-actions {
+                flex-direction: column;
+            }
+        
+        }
+    </style>
+</body>
+</html>

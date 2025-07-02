@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diário de Classe - Curso de Scratch</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="main-layout">
+        <header class="header">
+            <div class="logo">
+                <img src=img/scratch.png height=150 width=150 alt="Scratch Logo" id="scratch-logo">
+            </div>
+            <nav>
+                <ul class="nav-menu">
+                    <li id="navAdmin"><a href="admin.html">Administração de Usuários</a></li>
+                    <li id="navBancoDados"><a href="database.html">Banco de Dados</a></li>
+                    <li id="navDiarioClasseProf"><a href="teacher-diary.html">Diário de Classe</a></li>
+                    <li id="navMateriaisProf"><a href="teacher-materials.html">Materiais</a></li>
+                    
+                    <li class="dropdown">
+                        <a href="#">Links Externos ▼</a>
+                        <div class="dropdown-content">
+                            <a href="https://scratch.mit.edu/" target="_blank">Scratch Website</a>
+                            <a href="https://scratch.mit.edu/projects/editor/" target="_blank">Editor do Scratch</a>
+                            <a href="https://scratch.mit.edu/ideas" target="_blank">Ideias de Projetos</a>
+                            <a href="https://www.youtube.com/results?search_query=scratch+tutorial+português" target="_blank">Tutoriais YouTube</a>
+                            <a href="https://wayground.com/home-v1?lng=pt-BR" target="_blank">Wayground (Quizizz)</a>
+                        </div>
+                    </li>
+                    <li class="dropdown">
+                        <a href="#">Informações ▼</a>
+                        <div class="dropdown-content">
+                            <a href="horario-onibus.html">Horário do Ônibus</a>
+                            <a href="calendario-aulas.html">Calendário das Aulas</a>
+                            <a href="#" onclick="abrirWhatsApp()">Link do grupo do WhatsApp</a>
+                            <a href="endereco-aula.html">Endereço do Local das Aulas</a>
+                            <a href="contato.html">Contato</a>
+                        </div>
+                    </li>
+                </ul>
+            </nav>
+            <div class="user-profile">
+                <div class="user-avatar"><img src=img/icon-user.png height= 40px width= 40px alt="Icone do Perfil"></div>
+            </div>
+        </header>
+        
+        <main class="content">
+            <h1 class="page-title">🗓️ Diário de Classe</h1>
+            
+            <div class="attendance-controls">
+                <div class="form-group">
+                    <label for="classSelect">Selecionar Aula:</label>
+                    <select id="classSelect" onchange="loadAttendanceForSelectedClass()">
+                        <option value="">-- Selecione uma aula --</option>
+                    </select>
+                </div>
+                <button class="action-btn primary" onclick="saveAttendance()">Salvar Presença</button>
+            </div>
+
+            <div class="attendance-table-container">
+                <h2>Lista de Presença</h2>
+                <table class="database-table">
+                    <thead>
+                        <tr>
+                            <th>ID do Aluno</th>
+                            <th>Nome do Aluno</th>
+                            <th>Status da Presença</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceTableBody">
+                        <!-- Alunos e status de presença serão carregados aqui -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal de Mensagem (para substituir alerts) -->
+    <div id="messageModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="messageModalTitle"></h3>
+                <button class="close-btn" onclick="closeMessageModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p id="messageModalText"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn primary" onclick="closeMessageModal()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        let allClasses = [];
+        let allStudents = [];
+        let currentAttendanceRecords = []; // Armazena os registros de presença para a aula selecionada
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await fetchClasses();
+            await fetchStudents();
+            // Nenhuma aula selecionada inicialmente, então a tabela de presença estará vazia.
+        });
+
+        // Função para exibir o modal de mensagem
+        function showMessageModal(title, message) {
+            document.getElementById('messageModalTitle').textContent = title;
+            document.getElementById('messageModalText').textContent = message;
+            document.getElementById('messageModal').classList.remove('hidden');
+        }
+
+        // Função para fechar o modal de mensagem
+        function closeMessageModal() {
+            document.getElementById('messageModal').classList.add('hidden');
+        }
+
+        async function fetchClasses() {
+            try {
+                const response = await fetch('http://127.0.0.1:5000/classes');
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP! Status: ${response.status}`);
+                }
+                allClasses = await response.json();
+                populateClassSelect(allClasses);
+            } catch (error) {
+                console.error('Erro ao buscar aulas:', error);
+                showMessageModal('Erro', 'Não foi possível carregar a lista de aulas.');
+            }
+        }
+
+        function populateClassSelect(classes) {
+            const selectElement = document.getElementById('classSelect');
+            selectElement.innerHTML = '<option value="">-- Selecione uma aula --</option>'; // Limpa e adiciona opção padrão
+            classes.forEach(cls => {
+                const option = document.createElement('option');
+                option.value = cls.id;
+                option.textContent = `${cls.title} (${new Date(cls.date).toLocaleDateString('pt-BR')})`;
+                selectElement.appendChild(option);
+            });
+        }
+
+        async function fetchStudents() {
+            try {
+                const response = await fetch('http://127.0.0.1:5000/alunos'); // Rota para buscar todos os alunos
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP! Status: ${response.status}`);
+                }
+                allStudents = await response.json();
+                // ORDENAÇÃO: Ordenar alunos por nome em ordem alfabética
+                allStudents.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }));
+            } catch (error) {
+                console.error('Erro ao buscar alunos:', error);
+                showMessageModal('Erro', 'Não foi possível carregar a lista de alunos.');
+            }
+        }
+
+        async function loadAttendanceForSelectedClass() {
+            const selectedClassId = document.getElementById('classSelect').value;
+            const attendanceTableBody = document.getElementById('attendanceTableBody');
+            attendanceTableBody.innerHTML = ''; // Limpa a tabela
+
+            if (!selectedClassId) {
+                currentAttendanceRecords = [];
+                return; // Nenhuma aula selecionada
+            }
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/attendance'); // Busca todos os registros
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP! Status: ${response.status}`);
+                }
+                const allAttendance = await response.json();
+                currentAttendanceRecords = allAttendance.filter(record => record.class_id == selectedClassId);
+                
+                displayAttendanceTable(selectedClassId);
+
+            } catch (error) {
+                console.error('Erro ao buscar registros de presença:', error);
+                showMessageModal('Erro', 'Não foi possível carregar os registros de presença para esta aula.');
+            }
+        }
+
+        function displayAttendanceTable(selectedClassId) {
+            const attendanceTableBody = document.getElementById('attendanceTableBody');
+            attendanceTableBody.innerHTML = ''; // Limpa a tabela
+
+            if (allStudents.length === 0) {
+                attendanceTableBody.innerHTML = `<tr><td colspan="3" style="text-align: center;">Nenhum aluno encontrado.</td></tr>`;
+                return;
+            }
+
+            allStudents.forEach(student => {
+                const row = document.createElement('tr');
+                const existingRecord = currentAttendanceRecords.find(rec => rec.student_id == student.id);
+                // Se existir um registro, use o ID do registro existente. Caso contrário, não passe record-id.
+                const recordId = existingRecord ? existingRecord.id : ''; 
+                const currentStatus = existingRecord ? existingRecord.attendance_status : 'F'; // Padrão para Falta se não houver registro
+
+                row.innerHTML = `
+                    <td>${student.id}</td>
+                    <td>${student.nome}</td>
+                    <td>
+                        <select class="attendance-status-select" data-student-id="${student.id}" data-class-id="${selectedClassId}" data-record-id="${recordId}">
+                            <option value="P" ${currentStatus === 'P' ? 'selected' : ''}>Presente</option>
+                            <option value="F" ${currentStatus === 'F' ? 'selected' : ''}>Falta</option>
+                            <option value="Fj" ${currentStatus === 'Fj' ? 'selected' : ''}>Falta Justificada</option>
+                        </select>
+                    </td>
+                `;
+                attendanceTableBody.appendChild(row);
+            });
+        }
+
+        async function saveAttendance() {
+            const selectedClassId = document.getElementById('classSelect').value;
+            if (!selectedClassId) {
+                showMessageModal('Atenção', 'Por favor, selecione uma aula antes de salvar a presença.');
+                return;
+            }
+
+            const attendanceUpdates = [];
+            const selectElements = document.querySelectorAll('#attendanceTableBody .attendance-status-select');
+
+            selectElements.forEach(select => {
+                const studentId = select.dataset.studentId;
+                const classId = select.dataset.classId;
+                const newStatus = select.value; // Não precisamos mais do recordId no frontend para decidir PUT/POST
+
+                attendanceUpdates.push({
+                    student_id: parseInt(studentId),
+                    class_id: parseInt(classId),
+                    attendance_status: newStatus
+                });
+            });
+
+            let successCount = 0;
+            let errorCount = 0;
+
+            for (const update of attendanceUpdates) {
+                try {
+                    // Sempre tenta POST para /attendance/add. O backend agora fará o upsert.
+                    const response = await fetch('http://127.0.0.1:5000/attendance/add', {
+                        method: 'POST', // Sempre POST
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(update), // Envia o payload completo
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        successCount++;
+                        // Se o backend retornou o ID do registro (novo ou atualizado), atualize o data-record-id
+                        // para que na próxima vez o frontend já tenha o ID correto.
+                        if (data.id) {
+                            const selectElement = document.querySelector(`select[data-student-id="${update.student_id}"][data-class-id="${update.class_id}"]`);
+                            if (selectElement) {
+                                selectElement.dataset.recordId = data.id;
+                            }
+                        }
+                    } else {
+                        errorCount++;
+                        console.error(`Erro ao salvar presença para aluno ${update.student_id} na aula ${update.class_id}: ${data.message}`);
+                    }
+                } catch (error) {
+                    errorCount++;
+                    console.error(`Erro de rede/servidor ao salvar presença para aluno ${update.student_id}:`, error);
+                }
+            }
+
+            if (errorCount === 0) {
+                showMessageModal('Sucesso', `Presença salva para ${successCount} alunos.`);
+            } else {
+                showMessageModal('Atenção', `Presença salva para ${successCount} alunos, com ${errorCount} erros. Verifique o console para detalhes.`);
+            }
+            // Recarrega a presença para refletir quaisquer IDs de registro novos
+            // A recarga completa pode não ser necessária se os IDs forem atualizados no loop.
+            // No entanto, para garantir a consistência, vamos mantê-la por enquanto.
+            await loadAttendanceForSelectedClass(); 
+        }
+
+        // Funções para o perfil de usuário (copiadas de script.js para garantir acesso)
+        function abrirWhatsApp() {
+            const whatsappLink = "https://chat.whatsapp.com/GHZuEpQhb5uGFROPWioy9o?mode=ac_c";
+            window.open(whatsappLink, '_blank');
+        }
+
+        async function logout() {
+            const userId = localStorage.getItem("userId");
+            if (userId) {
+                try {
+                    await fetch(`http://127.0.0.1:5000/logout/${userId}`, {
+                        method: 'POST',
+                    });
+                    console.log('Status online atualizado para offline.');
+                } catch (error) {
+                    console.error('Erro ao atualizar status de logout:', error);
+                }
+            }
+            localStorage.removeItem("isLoggedIn");
+            localStorage.removeItem("userId");
+            localStorage.removeItem("username");
+            localStorage.removeItem("userRole");
+            localStorage.removeItem("userName");
+            localStorage.removeItem("userStudentId");
+            window.location.href = "index.html";
+        }
+
+        const userAvatar = document.querySelector(".user-avatar")
+        if (userAvatar) {
+            userAvatar.addEventListener("click", () => {
+                if (confirm("Deseja fazer logout?")) {
+                    logout()
+                }
+            })
+            userAvatar.style.cursor = "pointer"
+            userAvatar.title = "Clique para fazer logout"
+        }
+    </script>
+</body>
+</html>

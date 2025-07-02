@@ -1,0 +1,407 @@
+=<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administração - Curso de Scratch</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="main-layout">
+        <header class="header">
+            <div class="logo">
+                <img src=img/scratch.png height=150 width=150 alt="Scratch Logo" id="scratch-logo">
+            </div>
+            <nav>
+                <ul class="nav-menu">
+                    <li id="navAdmin"><a href="admin.html">Administração de Usuários</a></li>
+                    <li id="navBancoDados"><a href="database.html">Banco de Dados</a></li>
+                    <li id="navDiarioClasseProf"><a href="teacher-diary.html">Diário de Classe</a></li>
+                    <li id="navMateriaisProf"><a href="teacher-materials.html">Materiais</a></li>
+                    
+                    <li class="dropdown">
+                        <a href="#">Links Externos ▼</a>
+                        <div class="dropdown-content">
+                            <a href="https://scratch.mit.edu/" target="_blank">Scratch Website</a>
+                            <a href="https://scratch.mit.edu/projects/editor/" target="_blank">Editor do Scratch</a>
+                            <a href="https://scratch.mit.edu/ideas" target="_blank">Ideias de Projetos</a>
+                            <a href="https://www.youtube.com/results?search_query=scratch+tutorial+português" target="_blank">Tutoriais YouTube</a>
+                            <a href="https://wayground.com/home-v1?lng=pt-BR" target="_blank">Wayground (Quizizz)</a>
+                        </div>
+                    </li>
+                    <li class="dropdown">
+                        <a href="#">Informações ▼</a>
+                        <div class="dropdown-content">
+                            <a href="horario-onibus.html">Horário do Ônibus</a>
+                            <a href="calendario-aulas.html">Calendário das Aulas</a>
+                            <a href="#" onclick="abrirWhatsApp()">Link do grupo do WhatsApp</a>
+                            <a href="endereco-aula.html">Endereço do Local das Aulas</a>
+                            <a href="contato.html">Contato</a>
+                        </div>
+                    </li>
+                </ul>
+            </nav>
+            <div class="user-profile">
+                <div class="user-avatar"><img src=img/icon-user.png height= 40px width= 40px alt="Icone do Perfil"></div>
+            </div>
+        </header>
+        
+        <main class="content">
+            <h1 class="page-title">Administração de Usuários</h1>
+            
+            <div class="admin-actions">
+                <h2>Gerenciar Usuários</h2>
+                <div class="action-grid">
+                    <a href="#" class="quick-action-btn" onclick="openAddUserModal()">
+                        <div class="action-icon">➕</div>
+                        <div class="action-text">Adicionar Novo Usuário</div>
+                    </a>
+                    <!-- Os botões de Editar e Deletar foram removidos daqui, pois as ações serão feitas diretamente na tabela de listagem -->
+                </div>
+            </div>
+
+            <div class="admin-user-list">
+                <h2>Listagem de Usuários</h2>
+                <div class="database-table-container">
+                    <table class="database-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome de Usuário</th>
+                                <th>Nome Completo</th>
+                                <th>Perfil</th>
+                                <th>Último Login</th>
+                                <th>Total de Logins</th>
+                                <th>Status Online</th>
+                                <th>ID de Aluno (se aplicável)</th>
+                                <th>Ações</th> <!-- Nova coluna para botões de ação -->
+                            </tr>
+                        </thead>
+                        <tbody id="userListTableBody">
+                            <!-- Usuários serão carregados aqui via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal para Adicionar Novo Usuário (já existente) -->
+    <div id="addUserModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>➕ Adicionar Novo Usuário</h3>
+                <button class="close-btn" onclick="closeAddUserModal()">×</button>
+            </div>
+            <form id="addUserForm" class="modal-body">
+                <div class="form-group">
+                    <label for="newUsername">Nome de Usuário:</label>
+                    <input type="text" id="newUsername" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">Senha:</label>
+                    <input type="password" id="newPassword" name="password" required>
+                </div>
+                <div class="form-group">
+                    <label for="newFullName">Nome Completo (Opcional):</label>
+                    <input type="text" id="newFullName" name="full_name">
+                </div>
+                <div class="form-group">
+                    <label for="newRole">Perfil:</label>
+                    <select id="newRole" name="role" required>
+                        <option value="student">Aluno</option>
+                        <option value="teacher">Professor</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="newStudentId">ID de Aluno (se perfil for Aluno):</label>
+                    <input type="number" id="newStudentId" name="student_id" placeholder="Deixe em branco para Professor">
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="action-btn primary">Adicionar Usuário</button>
+                    <button type="button" class="action-btn secondary" onclick="closeAddUserModal()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- NOVO: Modal de Edição de Usuário -->
+    <div id="editUserModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>✏️ Editar Usuário</h3>
+                <button class="close-btn" onclick="closeEditUserModal()">×</button>
+            </div>
+            <form id="editUserForm" class="modal-body">
+                <input type="hidden" id="editUserId" name="id">
+                <div class="form-group">
+                    <label for="editUsername">Nome de Usuário:</label>
+                    <input type="text" id="editUsername" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="editPassword">Nova Senha (deixe em branco para não alterar):</label>
+                    <input type="password" id="editPassword" name="password">
+                </div>
+                <div class="form-group">
+                    <label for="editFullName">Nome Completo:</label>
+                    <input type="text" id="editFullName" name="full_name">
+                </div>
+                <div class="form-group">
+                    <label for="editRole">Perfil:</label>
+                    <select id="editRole" name="role" required>
+                        <option value="student">Aluno</option>
+                        <option value="teacher">Professor</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editStudentId">ID de Aluno (se perfil for Aluno):</label>
+                    <input type="number" id="editStudentId" name="student_id">
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="action-btn primary">Salvar Alterações</button>
+                    <button type="button" class="action-btn secondary" onclick="closeEditUserModal()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- NOVO: Modal de Confirmação de Exclusão -->
+    <div id="deleteUserConfirmModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🗑️ Confirmar Exclusão</h3>
+                <button class="close-btn" onclick="closeDeleteUserConfirmModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza de que deseja excluir o usuário <strong id="deleteUsernameConfirm"></strong>?</p>
+                <input type="hidden" id="deleteUserIdConfirm">
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn danger" onclick="confirmDeleteUser()">Excluir</button>
+                <button class="action-btn secondary" onclick="closeDeleteUserConfirmModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+    <script>
+        // Variável global para armazenar o ID do usuário sendo editado/excluído
+        let currentEditingUserId = null; 
+        let currentDeletingUserId = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchUserList(); // Carregar a lista de usuários ao carregar a página
+        });
+
+        async function fetchUserList() {
+            try {
+                const response = await fetch('http://127.0.0.1:5000/users');
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP! Status: ${response.status}`);
+                }
+                const users = await response.json();
+                displayUserList(users);
+            } catch (error) {
+                console.error('Erro ao buscar lista de usuários:', error);
+                const tbody = document.getElementById('userListTableBody');
+                if (tbody) {
+                    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: red;">Erro ao carregar lista de usuários.</td></tr>`; // Colspan ajustado para 9
+                }
+            }
+        }
+
+        function displayUserList(users) {
+            const tbody = document.getElementById('userListTableBody');
+            if (!tbody) {
+                console.warn('Elemento tbody da userListTableBody não encontrado.');
+                return;
+            }
+            tbody.innerHTML = ''; // Limpa as linhas existentes
+
+            if (users.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center;">Nenhum usuário encontrado.</td></tr>`; // Colspan ajustado para 9
+                return;
+            }
+
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                const lastLogin = user.last_login ? new Date(user.last_login).toLocaleString('pt-BR') : 'Nunca';
+                row.innerHTML = `
+                    <td>${user.id || ''}</td>
+                    <td>${user.username || ''}</td>
+                    <td>${user.full_name || ''}</td>
+                    <td>${user.role || ''}</td>
+                    <td>${lastLogin}</td>
+                    <td>${user.total_logins !== null ? user.total_logins : ''}</td>
+                    <td>${user.online_status || ''}</td>
+                    <td>${user.student_id !== null ? user.student_id : ''}</td>
+                    <td>
+                        <button class="action-btn small" onclick="openEditUserModal(${user.id})">Editar</button>
+                        <button class="action-btn small danger" onclick="openDeleteUserConfirmModal(${user.id}, '${user.username}')">Excluir</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Funções para o modal de adicionar usuário (já existentes)
+        window.openAddUserModal = function() {
+            document.getElementById('addUserModal').classList.remove('hidden');
+        }
+
+        window.closeAddUserModal = function() {
+            document.getElementById('addUserModal').classList.add('hidden');
+            document.getElementById('addUserForm').reset();
+        }
+
+        const addUserForm = document.getElementById('addUserForm');
+        if (addUserForm) {
+            addUserForm.addEventListener('submit', async function(event) {
+                event.preventDefault();
+
+                const formData = new FormData(addUserForm);
+                const userData = {};
+                for (let [key, value] of formData.entries()) {
+                    userData[key] = value;
+                }
+                
+                // Validações básicas (pode expandir)
+                if (!userData.username || !userData.password || !userData.role) {
+                    alert('Nome de usuário, senha e perfil são obrigatórios.');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('http://127.0.0.1:5000/users/add', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(userData),
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        alert('Usuário adicionado com sucesso!');
+                        closeAddUserModal();
+                        fetchUserList(); // Recarrega a lista
+                    } else {
+                        alert('Erro ao adicionar usuário: ' + (data.message || 'Erro desconhecido.'));
+                    }
+                } catch (error) {
+                    console.error('Erro de rede ou servidor ao adicionar usuário:', error);
+                    alert('Erro de conexão ou servidor. Tente novamente mais tarde.');
+                }
+            });
+        }
+
+        // Funções para o modal de edição de usuário
+        window.openEditUserModal = async function(userId) {
+            currentEditingUserId = userId; // Armazena o ID do usuário
+            try {
+                const response = await fetch(`http://127.0.0.1:5000/users/${userId}`);
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP! Status: ${response.status}`);
+                }
+                const user = await response.json();
+
+                // Preenche o formulário de edição com os dados do usuário
+                document.getElementById('editUserId').value = user.id;
+                document.getElementById('editUsername').value = user.username;
+                document.getElementById('editFullName').value = user.full_name || '';
+                document.getElementById('editRole').value = user.role;
+                document.getElementById('editStudentId').value = user.student_id || '';
+                document.getElementById('editPassword').value = ''; // Limpa o campo de senha por segurança
+
+                document.getElementById('editUserModal').classList.remove('hidden');
+            } catch (error) {
+                console.error('Erro ao buscar dados do usuário para edição:', error);
+                alert('Erro ao carregar dados do usuário para edição. Tente novamente.');
+            }
+        }
+
+        window.closeEditUserModal = function() {
+            document.getElementById('editUserModal').classList.add('hidden');
+            document.getElementById('editUserForm').reset();
+            currentEditingUserId = null; // Limpa o ID
+        }
+
+        const editUserForm = document.getElementById('editUserForm');
+        if (editUserForm) {
+            editUserForm.addEventListener('submit', async function(event) {
+                event.preventDefault();
+
+                const formData = new FormData(editUserForm);
+                const userData = {};
+                for (let [key, value] of formData.entries()) {
+                    userData[key] = value;
+                }
+
+                // Remove o campo de senha se estiver vazio, para não tentar hashar uma string vazia
+                if (userData.password === '') {
+                    delete userData.password;
+                }
+
+                try {
+                    const response = await fetch(`http://127.0.0.1:5000/users/edit/${currentEditingUserId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(userData),
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        alert('Usuário atualizado com sucesso!');
+                        closeEditUserModal();
+                        fetchUserList(); // Recarrega a lista
+                    } else {
+                        alert('Erro ao atualizar usuário: ' + (data.message || 'Erro desconhecido.'));
+                    }
+                } catch (error) {
+                    console.error('Erro de rede ou servidor ao atualizar usuário:', error);
+                    alert('Erro de conexão ou servidor. Tente novamente mais tarde.');
+                }
+            });
+        }
+
+        // Funções para o modal de exclusão de usuário
+        window.openDeleteUserConfirmModal = function(userId, username) {
+            currentDeletingUserId = userId;
+            document.getElementById('deleteUsernameConfirm').textContent = username;
+            document.getElementById('deleteUserIdConfirm').value = userId; // Armazena o ID no input hidden
+            document.getElementById('deleteUserConfirmModal').classList.remove('hidden');
+        }
+
+        window.closeDeleteUserConfirmModal = function() {
+            document.getElementById('deleteUserConfirmModal').classList.add('hidden');
+            currentDeletingUserId = null;
+            document.getElementById('deleteUsernameConfirm').textContent = ''; // Limpa o nome
+            document.getElementById('deleteUserIdConfirm').value = ''; // Limpa o ID
+        }
+
+        window.confirmDeleteUser = async function() {
+            if (currentDeletingUserId === null) {
+                alert('Nenhum usuário selecionado para exclusão.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://127.0.0.1:5000/users/delete/${currentDeletingUserId}`, {
+                    method: 'DELETE',
+                });
+                const data = await response.json();
+                if (data.success) {
+                    alert('Usuário excluído com sucesso!');
+                    closeDeleteUserConfirmModal();
+                    fetchUserList(); // Recarrega a lista
+                } else {
+                    alert('Erro ao excluir usuário: ' + (data.message || 'Erro desconhecido.'));
+                }
+            } catch (error) {
+                console.error('Erro de rede ou servidor ao excluir usuário:', error);
+                alert('Erro de conexão ou servidor. Tente novamente mais tarde.');
+            }
+        }
+    </script>
+</body>
+</html>

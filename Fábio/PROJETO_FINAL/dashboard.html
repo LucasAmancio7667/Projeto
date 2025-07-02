@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Curso de Scratch</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="main-layout">
+        <header class="header">
+            <div class="logo">
+                <img src=img/scratch.png height=50px width=50px alt="Scratch Logo" id="scratch-logo">
+            </div>
+            <nav>
+                <ul class="nav-menu">
+                    <li id="navDiarioClasseAluno"><a href="dashboard.html" class="active">Diário de Classe</a></li>
+                    <li id="navMateriaisAluno"><a href="materials.html">Materiais</a></li>
+                    
+                    <!-- Links para Professor/Admin (visibilidade controlada por script.js) -->
+                    <li id="navAdmin" style="display: none;"><a href="admin.html">Administração de Usuários</a></li>
+                    <li id="navBancoDados" style="display: none;"><a href="database.html">Banco de Dados</a></li>
+                    <li id="navDiarioClasseProf" style="display: none;"><a href="teacher-diary.html">Diário de Classe (Prof.)</a></li>
+                    <li id="navMateriaisProf" style="display: none;"><a href="teacher-materials.html">Materiais (Prof.)</a></li>
+
+                    <li class="dropdown">
+                        <a href="#">Links Externos ▼</a>
+                        <div class="dropdown-content">
+                            <a href="https://scratch.mit.edu/" target="_blank">Scratch Site</a>
+                            <a href="https://scratch.mit.edu/projects/editor/" target="_blank">Editor do Scratch</a>
+                            <a href="https://scratch.mit.edu/ideas" target="_blank">Ideias de Projetos</a>
+                            <a href="https://www.youtube.com/results?search_query=scratch+tutorial+português" target="_blank">Tutoriais YouTube</a>
+                            <a href="https://wayground.com/home-v1?lng=pt-BR" target="_blank">Wayground (Quizizz)</a>
+                        </div>
+                    </li>
+                    <li class="dropdown">
+                        <a href="#">Informações ▼</a>
+                        <div class="dropdown-content">
+                            <a href="horario-onibus.html">Horário do Ônibus</a>
+                            <a href="calendario-aulas.html">Calendário das Aulas</a>
+                            <a href="#" onclick="abrirWhatsApp()">Link do grupo do WhatsApp</a>
+                            <a href="endereco-aula.html">Endereço do Local das Aulas</a>
+                            <a href="contato.html">Contato</a>
+                        </div>
+                    </li>
+                </ul>
+            </nav>
+            <div class="user-profile">
+                <div class="user-avatar"><img src=img/icon-user.png height= 40px width= 40px alt="Icone do Perfil"></div>
+            </div>
+        </header>
+        
+        <main class="content">
+            <h1 class="page-title">Diário de Classe do Aluno</h1>
+            
+            <div class="attendance-info">
+                <div class="attendance-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Seu percentual de presença:</span>
+                        <span class="stat-value" id="presencePercentage">--%</span>
+                    </div>
+                    <div class="warning-message" id="absenceWarning">
+                        <!-- Mensagem de faltas será carregada aqui -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="attendance-table-container">
+                <table class="attendance-table">
+                    <thead>
+                        <tr id="attendanceTableHeader">
+                            <th class="name-header">Nome do Aluno</th>
+                            <!-- Datas das aulas serão carregadas aqui -->
+                            <th>P</th>
+                            <th>Fj</th>
+                            <th>F</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceTableBody">
+                        <!-- Dados de presença do aluno serão carregados aqui -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+    <script>
+        let studentData = null; // Armazena os dados do aluno logado
+        let studentAttendance = []; // Armazena os registros de presença do aluno
+        let allClasses = []; // Armazena todas as aulas para os cabeçalhos de data
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadStudentDashboard();
+        });
+
+        async function loadStudentDashboard() {
+            const userId = localStorage.getItem('userId');
+            const studentId = localStorage.getItem('userStudentId');
+
+            if (!userId || !studentId) {
+                console.error('ID do usuário ou ID do aluno não encontrado no localStorage.');
+                // Redirecionar para login ou exibir mensagem de erro
+                return;
+            }
+
+            try {
+                // 1. Buscar dados do aluno
+                const studentResponse = await fetch(`http://127.0.0.1:5000/alunos/${studentId}`);
+                if (!studentResponse.ok) {
+                    throw new Error(`Erro HTTP ao buscar dados do aluno! Status: ${studentResponse.status}`);
+                }
+                studentData = await studentResponse.json();
+                console.log('Dados do aluno:', studentData);
+
+                // 2. Buscar todas as aulas (para cabeçalhos de data)
+                const classesResponse = await fetch('http://127.0.0.1:5000/classes');
+                if (!classesResponse.ok) {
+                    throw new Error(`Erro HTTP ao buscar aulas! Status: ${classesResponse.status}`);
+                }
+                allClasses = await classesResponse.json();
+                // Ordenar aulas por data para exibição correta
+                allClasses.sort((a, b) => new Date(a.date) - new Date(b.date));
+                console.log('Todas as aulas:', allClasses);
+
+
+                // 3. Buscar registros de presença do aluno
+                const attendanceResponse = await fetch(`http://127.0.0.1:5000/attendance/student/${studentId}`);
+                if (!attendanceResponse.ok) {
+                    throw new Error(`Erro HTTP ao buscar presença do aluno! Status: ${attendanceResponse.status}`);
+                }
+                studentAttendance = await attendanceResponse.json();
+                console.log('Presença do aluno:', studentAttendance);
+
+                // 4. Exibir dados na dashboard
+                displayStudentAttendance();
+                updateAttendanceStats();
+
+            } catch (error) {
+                console.error('Erro ao carregar dashboard do aluno:', error);
+                alert('Erro ao carregar suas informações de diário de classe. Tente novamente mais tarde.');
+            }
+        }
+
+        function displayStudentAttendance() {
+            const tableHeader = document.getElementById('attendanceTableHeader');
+            const tableBody = document.getElementById('attendanceTableBody');
+            tableBody.innerHTML = ''; // Limpa o corpo da tabela
+
+            // Gerar cabeçalhos de data dinamicamente
+            let dateHeadersHtml = '<th class="name-header">Nome do Aluno</th>';
+            allClasses.forEach(cls => {
+                const date = new Date(cls.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+                dateHeadersHtml += `<th>${date}</th>`;
+            });
+            dateHeadersHtml += '<th>P</th><th>Fj</th><th>F</th>';
+            tableHeader.innerHTML = dateHeadersHtml;
+
+            if (!studentData) {
+                tableBody.innerHTML = `<tr><td colspan="${allClasses.length + 4}" style="text-align: center;">Dados do aluno não encontrados.</td></tr>`;
+                return;
+            }
+
+            const row = document.createElement('tr');
+            let totalPresent = 0;
+            let totalJustified = 0;
+            let totalAbsent = 0;
+
+            let attendanceCellsHtml = `<td>${studentData.nome}</td>`;
+
+            allClasses.forEach(cls => {
+                const record = studentAttendance.find(rec => rec.class_id == cls.id);
+                const status = record ? record.attendance_status : '-'; // '-' se não houver registro
+
+                attendanceCellsHtml += `<td class="attendance-cell ${getStatusClass(status)}">${status}</td>`;
+
+                // Contar totais
+                switch (status) {
+                    case 'P':
+                        totalPresent++;
+                        break;
+                    case 'Fj':
+                        totalJustified++;
+                        break;
+                    case 'F':
+                        totalAbsent++;
+                        break;
+                }
+            });
+
+            attendanceCellsHtml += `
+                <td class="total-present">${totalPresent}</td>
+                <td class="total-justified">${totalJustified}</td>
+                <td class="total-absent">${totalAbsent}</td>
+            `;
+            row.innerHTML = attendanceCellsHtml;
+            tableBody.appendChild(row);
+        }
+
+        function getStatusClass(status) {
+            switch (status) {
+                case 'P': return 'present';
+                case 'F': return 'absent';
+                case 'Fj': return 'justified';
+                default: return '';
+            }
+        }
+
+        function updateAttendanceStats() {
+            const presencePercentageElement = document.getElementById('presencePercentage');
+            const absenceWarningElement = document.getElementById('absenceWarning');
+
+            const totalClasses = allClasses.length;
+            let totalAbsences = 0; // Contagem combinada de F e Fj
+
+            studentAttendance.forEach(record => {
+                if (record.attendance_status === 'F' || record.attendance_status === 'Fj') {
+                    totalAbsences++;
+                }
+            });
+
+            const totalPresent = totalClasses - totalAbsences;
+            const presencePercentage = totalClasses > 0 ? ((totalPresent / totalClasses) * 100).toFixed(0) : 0;
+
+            presencePercentageElement.textContent = `${presencePercentage}%`;
+
+            // Lógica para a mensagem de aviso de faltas
+            // Assumindo que o limite de faltas para desclassificação é 3, por exemplo.
+            const absenceLimit = 3; 
+            const remainingAbsences = absenceLimit - totalAbsences;
+
+            if (remainingAbsences <= 0) {
+                absenceWarningElement.innerHTML = `Você foi desclassificado(a) por ter <strong>${totalAbsences} falta(s)</strong>.`;
+                absenceWarningElement.style.color = 'red';
+                absenceWarningElement.style.fontWeight = 'bold';
+            } else if (remainingAbsences === 1) {
+                absenceWarningElement.innerHTML = `Você ainda tem <strong>1 falta</strong> para não ser desclassificado(a).`;
+                absenceWarningElement.style.color = 'orange';
+            } else {
+                absenceWarningElement.innerHTML = `Você ainda tem <strong>${remainingAbsences} faltas</strong> para não ser desclassificado(a).`;
+                absenceWarningElement.style.color = 'green';
+            }
+        }
+
+
+        // Funções de navegação e logout (copiadas de script.js para garantir acesso)
+        function abrirWhatsApp() {
+            const whatsappLink = "https://chat.whatsapp.com/GHZuEpQhb5uGFROPWioy9o?mode=ac_c";
+            window.open(whatsappLink, '_blank');
+        }
+
+        async function logout() {
+            const userId = localStorage.getItem("userId");
+            if (userId) {
+                try {
+                    await fetch(`http://127.0.0.1:5000/logout/${userId}`, {
+                        method: 'POST',
+                    });
+                    console.log('Status online atualizado para offline.');
+                } catch (error) {
+                    console.error('Erro ao atualizar status de logout:', error);
+                }
+            }
+            localStorage.removeItem("isLoggedIn");
+            localStorage.removeItem("userId");
+            localStorage.removeItem("username");
+            localStorage.removeItem("userRole");
+            localStorage.removeItem("userName");
+            localStorage.removeItem("userStudentId");
+            window.location.href = "index.html";
+        }
+
+        const userAvatar = document.querySelector(".user-avatar")
+        if (userAvatar) {
+            userAvatar.addEventListener("click", () => {
+                if (confirm("Deseja fazer logout?")) {
+                    logout()
+                }
+            })
+            userAvatar.style.cursor = "pointer"
+            userAvatar.title = "Clique para fazer logout"
+        }
+    </script>
+</body>
+</html>
