@@ -7,6 +7,36 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body class="login-page">
+    <div id="messageModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="messageModalTitle"></h3>
+                <button class="close-btn" onclick="closeMessageModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p id="messageModalText"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn primary" onclick="closeMessageModal()">OK</button>
+            </div>
+        </div>
+    </div>
+    <div id="confirmModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="confirmModalTitle"></h3>
+                <button class="close-btn" onclick="closeConfirmModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmModalText"></p>
+            </div>
+            <div class="modal-footer">
+                <button id="confirmCancelBtn" class="action-btn secondary" onclick="closeConfirmModal()">Cancelar</button>
+                <button id="confirmOkBtn" class="action-btn danger">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
     <div class="login-container">
         <div class="welcome-section">
             <h1>Bem Vindo(a)!</h1>

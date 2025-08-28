@@ -360,15 +360,6 @@ body {
   font-weight: bold;
 }
 
-/* Atividades - REMOVIDAS */
-/* .activity-container { ... } */
-/* .activity-title { ... } */
-/* .activity-page.hidden { ... } */
-/* .question { ... } */
-/* .question h3 { ... } */
-/* .question textarea { ... } */
-/* .question textarea:focus { ... } */
-
 /* Feedback - REMOVIDAS */
 .feedback-title {
   background: linear-gradient(45deg, #9c27b0, #673ab7);
@@ -1007,6 +998,11 @@ body {
   backdrop-filter: blur(2px);
 }
 
+
+#messageModal {
+  z-index: 2000;
+}
+
 .modal.hidden {
   display: none !important;
 }
@@ -1121,49 +1117,6 @@ body {
   justify-content: flex-end;
 }
 
-/* Estilos para Atividades do Professor - REMOVIDOS */
-/* .activities-stats { ... } */
-/* .activities-management { ... } */
-/* .activity-filters { ... } */
-/* .activity-filters select { ... } */
-/* .activities-grid { ... } */
-/* .activity-card { ... } */
-/* .activity-card:hover { ... } */
-/* .activity-header { ... } */
-/* .activity-title h3 { ... } */
-/* .activity-date { ... } */
-/* .activity-status { ... } */
-/* .status-badge { ... } */
-/* .status-badge.active { ... } */
-/* .status-badge.pending { ... } */
-/* .status-badge.draft { ... } */
-/* .activity-stats { ... } */
-/* .activity-stats .stat-item { ... } */
-/* .stat-icon { ... } */
-/* .activity-actions { ... } */
-/* .general-actions { ... } */
-
-/* Estilos para Modal de Respostas - REMOVIDOS */
-/* .responses-summary { ... } */
-/* .responses-summary h4 { ... } */
-/* .summary-stats { ... } */
-/* .summary-item { ... } */
-/* .summary-label { ... } */
-/* .summary-value { ... } */
-/* .responses-list { ... } */
-/* .response-card { ... } */
-/* .response-header { ... } */
-/* .student-info { ... } */
-/* .student-name { ... } */
-/* .response-date { ... } */
-/* .response-grade { ... } */
-/* .grade-label { ... } */
-/* .grade-input { ... } */
-/* .response-content { ... } */
-/* .answer-item { ... } */
-/* .question-number { ... } */
-/* .answer-text { ... } */
-
 /* Responsivo (continuam ajustadas) */
 @media (max-width: 768px) {
   .upload-area {
@@ -1201,6 +1154,55 @@ body {
   .modal-footer {
     flex-direction: column;
   }
+}
+
+/* Modal */
+.modal-header.success {
+  background-color: #d4edda; /* Verde para sucesso */
+}
+.modal-header.success h3 {
+  color: #155724;
+}
+
+.modal-header.error {
+  background-color: #f8d7da; /* Vermelho para erro */
+}
+.modal-header.error h3 {
+  color: #721c24;
+}
+
+.modal-header.warning {
+  background-color: #fff3cd; /* Amarelo para aviso */
+}
+.modal-header.warning h3 {
+  color: #856404;
+}
 
 
+/* Indicador de Carregamento */
+.spinner-overlay {
+  position: fixed; /* Cobre a tela inteira */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.7); /* Fundo branco semitransparente */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 3000; /* Garante que fique na frente de tudo */
+}
+
+.spinner {
+  border: 8px solid #f3f3f3; /* Cinza claro */
+  border-top: 8px solid #4a90e2; /* Azul do projeto */
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }

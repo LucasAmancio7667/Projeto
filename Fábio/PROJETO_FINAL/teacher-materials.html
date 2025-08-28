@@ -7,10 +7,26 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <div id="confirmModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="confirmModalTitle"></h3>
+                <button class="close-btn" onclick="closeConfirmModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmModalText"></p>
+            </div>
+            <div class="modal-footer">
+                <button id="confirmCancelBtn" class="action-btn secondary" onclick="closeConfirmModal()">Cancelar</button>
+                <button id="confirmOkBtn" class="action-btn danger">Confirmar</button>
+            </div>
+        </div>
+    </div>
+    
     <div class="main-layout">
         <header class="header">
             <div class="logo">
-                <img src=img/scratch.png height=150 width=150 alt="Scratch Logo" id="scratch-logo">
+                <img src="img/scratch.png" height="150" width="150" alt="Scratch Logo" id="scratch-logo">
             </div>
             <nav>
                 <ul class="nav-menu">
@@ -41,7 +57,7 @@
                 </ul>
             </nav>
             <div class="user-profile">
-                <div class="user-avatar"><img src=img/icon-user.png height= 40px width= 40px alt="Icone do Perfil"></div>
+                <div class="user-avatar"><img src="img/icon-user.png" height="40px" width="40px" alt="Icone do Perfil"></div>
             </div>
         </header>
         
@@ -77,7 +93,7 @@
                 </div>
                 
                 <div id="materialsList" class="materials-grid">
-                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -105,22 +121,32 @@
             </div>
         </div>
     </div>
+
+    <div id="messageModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="messageModalTitle"></h3>
+                <button class="close-btn" onclick="closeMessageModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p id="messageModalText"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn primary" onclick="closeMessageModal()">OK</button>
+            </div>
+        </div>
+    </div>
     
     <script src="script.js"></script>
     <script>
         let currentEditingId = null;
         
-        // Configurar área de upload
         document.addEventListener('DOMContentLoaded', () => {
             const uploadArea = document.getElementById('uploadArea');
             const fileInput = document.getElementById('fileInput');
             
-            // Click para selecionar arquivo
-            uploadArea.addEventListener('click', () => {
-                fileInput.click();
-            });
+            uploadArea.addEventListener('click', () => fileInput.click());
             
-            // Drag and drop
             uploadArea.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 uploadArea.classList.add('drag-over');
@@ -133,11 +159,9 @@
             uploadArea.addEventListener('drop', (e) => {
                 e.preventDefault();
                 uploadArea.classList.remove('drag-over');
-                const files = e.dataTransfer.files;
-                handleFiles(files);
+                handleFiles(e.dataTransfer.files);
             });
             
-            // Seleção de arquivo
             fileInput.addEventListener('change', (e) => {
                 handleFiles(e.target.files);
             });
@@ -145,7 +169,6 @@
             loadMaterials();
         });
         
-        // Processar arquivos selecionados
         function handleFiles(files) {
             Array.from(files).forEach(file => {
                 if (validateFile(file)) {
@@ -154,33 +177,28 @@
             });
         }
         
-        // Validar arquivo
         function validateFile(file) {
             const allowedTypes = [
-                'application/pdf',
-                'application/vnd.ms-powerpoint',
+                'application/pdf', 'application/vnd.ms-powerpoint',
                 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-                'application/msword',
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                 'text/plain'
             ];
-            
             const maxSize = 50 * 1024 * 1024; // 50MB
             
             if (!allowedTypes.includes(file.type)) {
-                alert(`Formato não suportado: ${file.name}`);
+                showMessageModal('Arquivo Inválido', `O formato do arquivo ${file.name} não é suportado.`, 'error');
                 return false;
             }
             
             if (file.size > maxSize) {
-                alert(`Arquivo muito grande: ${file.name} (máx. 50MB)`);
+                showMessageModal('Arquivo Inválido', `O arquivo ${file.name} é muito grande (limite de 50MB).`, 'error');
                 return false;
             }
             
             return true;
         }
         
-        // Upload do arquivo
         function uploadFile(file) {
             const progressDiv = document.getElementById('uploadProgress');
             const progressFill = document.getElementById('progressFill');
@@ -193,18 +211,12 @@
             
             reader.onload = function(e) {
                 const material = {
-                    id: Date.now().toString(),
-                    name: file.name,
-                    type: file.type,
-                    size: file.size,
-                    data: e.target.result,
-                    uploadDate: new Date().toISOString(),
+                    id: Date.now().toString(), name: file.name, type: file.type,
+                    size: file.size, data: e.target.result, uploadDate: new Date().toISOString(),
                     description: ''
                 };
-                
                 saveMaterial(material);
                 
-                // Simular progresso
                 let progress = 0;
                 const interval = setInterval(() => {
                     progress += 10;
@@ -215,7 +227,7 @@
                         setTimeout(() => {
                             progressDiv.classList.add('hidden');
                             progressFill.style.width = '0%';
-                            alert(`✅ ${file.name} foi enviado com sucesso!`);
+                            showMessageModal('Sucesso!', `O arquivo ${file.name} foi enviado com sucesso!`, 'success');
                             loadMaterials();
                         }, 500);
                     }
@@ -225,16 +237,13 @@
             reader.readAsDataURL(file);
         }
         
-        // Salvar material no localStorage
         function saveMaterial(material) {
             const savedMaterials = localStorage.getItem('courseMaterials');
             const materials = savedMaterials ? JSON.parse(savedMaterials) : [];
-            
             materials.push(material);
             localStorage.setItem('courseMaterials', JSON.stringify(materials));
         }
         
-        // Carregar materiais
         function loadMaterials() {
             const materialsList = document.getElementById('materialsList');
             const savedMaterials = localStorage.getItem('courseMaterials');
@@ -248,47 +257,38 @@
                         <div class="empty-icon">📁</div>
                         <p>Nenhum material enviado ainda</p>
                         <p class="empty-subtitle">Faça upload do primeiro arquivo para começar</p>
-                    </div>
-                `;
+                    </div>`;
                 updateStats(0, 0);
                 return;
             }
             
             let totalSize = 0;
-            
             materials.forEach(material => {
                 totalSize += material.size;
-                
                 const materialCard = document.createElement('div');
                 materialCard.className = 'material-card';
                 materialCard.innerHTML = `
                     <div class="material-icon">${getFileIcon(material.type)}</div>
                     <div class="material-info">
                         <div class="material-name">${material.name}</div>
-                        <div class="material-meta">
-                            ${formatFileSize(material.size)} • ${formatDate(material.uploadDate)}
-                        </div>
+                        <div class="material-meta">${formatFileSize(material.size)} • ${formatDate(material.uploadDate)}</div>
                         ${material.description ? `<div class="material-description">${material.description}</div>` : ''}
                     </div>
                     <div class="material-actions">
                         <button class="action-btn small" onclick="downloadMaterial('${material.id}')" title="Download">📥</button>
                         <button class="action-btn small" onclick="editMaterial('${material.id}')" title="Editar">✏️</button>
                         <button class="action-btn small danger" onclick="confirmDelete('${material.id}')" title="Excluir">🗑️</button>
-                    </div>
-                `;
+                    </div>`;
                 materialsList.appendChild(materialCard);
             });
-            
             updateStats(materials.length, totalSize);
         }
         
-        // Atualizar estatísticas
         function updateStats(count, totalSize) {
             document.getElementById('materialsCount').textContent = `${count} arquivo${count !== 1 ? 's' : ''}`;
             document.getElementById('totalSize').textContent = formatFileSize(totalSize);
         }
         
-        // Obter ícone do arquivo
         function getFileIcon(type) {
             if (type.includes('pdf')) return '📄';
             if (type.includes('presentation') || type.includes('powerpoint')) return '📊';
@@ -297,7 +297,6 @@
             return '📁';
         }
         
-        // Formatar tamanho do arquivo
         function formatFileSize(bytes) {
             if (bytes === 0) return '0 B';
             const k = 1024;
@@ -306,18 +305,14 @@
             return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
         }
         
-        // Formatar data
         function formatDate(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('pt-BR');
+            return new Date(dateString).toLocaleDateString('pt-BR');
         }
         
-        // Download de material
         function downloadMaterial(materialId) {
             const savedMaterials = localStorage.getItem('courseMaterials');
             const materials = savedMaterials ? JSON.parse(savedMaterials) : [];
             const material = materials.find(m => m.id === materialId);
-            
             if (material) {
                 const link = document.createElement('a');
                 link.href = material.data;
@@ -326,12 +321,10 @@
             }
         }
         
-        // Editar material
         function editMaterial(materialId) {
             const savedMaterials = localStorage.getItem('courseMaterials');
             const materials = savedMaterials ? JSON.parse(savedMaterials) : [];
             const material = materials.find(m => m.id === materialId);
-            
             if (material) {
                 currentEditingId = materialId;
                 document.getElementById('editName').value = material.name;
@@ -340,24 +333,19 @@
             }
         }
         
-        // Fechar modal de edição
         function closeEditModal() {
             document.getElementById('editModal').classList.add('hidden');
             currentEditingId = null;
         }
         
-        // Salvar edição
         function saveEdit() {
             if (!currentEditingId) return;
-            
             const newName = document.getElementById('editName').value.trim();
-            const newDescription = document.getElementById('editDescription').value.trim();
-            
             if (!newName) {
-                alert('Nome do arquivo é obrigatório!');
+                showMessageModal('Campo Obrigatório', 'O nome do arquivo é obrigatório.', 'warning');
                 return;
             }
-            
+            const newDescription = document.getElementById('editDescription').value.trim();
             const savedMaterials = localStorage.getItem('courseMaterials');
             const materials = savedMaterials ? JSON.parse(savedMaterials) : [];
             const materialIndex = materials.findIndex(m => m.id === currentEditingId);
@@ -366,14 +354,12 @@
                 materials[materialIndex].name = newName;
                 materials[materialIndex].description = newDescription;
                 localStorage.setItem('courseMaterials', JSON.stringify(materials));
-                
-                alert('✅ Material atualizado com sucesso!');
+                showMessageModal('Sucesso!', 'O material foi atualizado com sucesso!', 'success');
                 closeEditModal();
                 loadMaterials();
             }
         }
         
-        // Confirmar exclusão
         function confirmDelete(materialId) {
             const savedMaterials = localStorage.getItem('courseMaterials');
             const materials = savedMaterials ? JSON.parse(savedMaterials) : [];
@@ -382,13 +368,11 @@
             if (material && confirm(`Tem certeza que deseja excluir "${material.name}"?`)) {
                 const updatedMaterials = materials.filter(m => m.id !== materialId);
                 localStorage.setItem('courseMaterials', JSON.stringify(updatedMaterials));
-                
-                alert('🗑️ Material excluído com sucesso!');
+                showMessageModal('Sucesso!', 'O material foi excluído com sucesso!', 'success');
                 loadMaterials();
             }
         }
         
-        // Excluir material (do modal)
         function deleteMaterial() {
             if (currentEditingId && confirm('Tem certeza que deseja excluir este material?')) {
                 confirmDelete(currentEditingId);
