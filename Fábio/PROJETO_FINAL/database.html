@@ -87,7 +87,6 @@
                         <option value="info_alunos">Informações dos Alunos</option>
                         <option value="status_alunos">Status Geral dos Alunos</option>
                         <option value="login_alunos">Usuários de Login</option>
-                        <option value="atividades_alunos">Atividades dos Alunos</option>
                     </select>
                 </div>
                 <div class="search-and-actions-wrapper">
@@ -96,8 +95,8 @@
                         <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Pesquisar na tabela atual...">
                     </div>
                     <div class="database-actions">
-                        <button class="action-btn primary" onclick="addRecord()">➕ Adicionar Registro</button>
-                        <button class="action-btn secondary" onclick="editRecord()">✏️ Editar Registro</button>
+                        <button class="action-btn primary" onclick="addRecord()">Adicionar Registro</button>
+                        <button class="action-btn secondary" onclick="editRecord()">Editar Registro</button>
                     </div>
                 </div>
             </div>
@@ -195,7 +194,7 @@
     <div id="addAlunoModal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>➕ Adicionar Novo Aluno</h3>
+                <h3>Adicionar Novo Aluno</h3>
                 <button class="close-btn" onclick="closeAddAlunoModal()">×</button>
             </div>
             <form id="addAlunoForm" class="modal-body">
@@ -267,7 +266,7 @@
     <div id="editAlunoModal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>✏️ Editar Aluno</h3>
+                <h3>Editar Aluno</h3>
                 <button class="close-btn" onclick="closeEditAlunoModal()">×</button>
             </div>
             <form id="editAlunoForm" class="modal-body">
