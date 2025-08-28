@@ -40,6 +40,7 @@ body {
   max-width: 900px;
   width: 100%;
   min-height: 500px;
+  overflow: hidden; /* Adicionado para garantir que os cantos arredondados funcionem */
 }
 
 .welcome-section {
@@ -52,6 +53,9 @@ body {
   align-items: center;
   justify-content: center;
   text-align: center;
+  /* ALTERAÇÃO AQUI: Adicionado para arredondar os cantos da esquerda */
+  border-top-left-radius: 20px;
+  border-bottom-left-radius: 20px;
 }
 
 .welcome-section h1 {
@@ -458,7 +462,22 @@ body {
   .welcome-section,
   .login-section {
     padding: 40px 20px;
+    /* ALTERAÇÃO AQUI: Ajusta o radius para a visualização mobile */
+    border-radius: 0;
   }
+  
+  /* Garante que os cantos certos fiquem arredondados no mobile */
+  .welcome-section {
+      border-top-left-radius: 20px;
+      border-top-right-radius: 20px;
+      border-bottom-left-radius: 0;
+  }
+
+  .login-section {
+      border-bottom-left-radius: 20px;
+      border-bottom-right-radius: 20px;
+  }
+
 
   .header {
     flex-direction: column;
