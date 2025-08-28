@@ -77,6 +77,49 @@ def serve_static_files(filename):
     return send_from_directory(app.static_folder, filename)
 
 # ====================================================================================================
+# NOVA ROTA PARA ESTATÍSTICAS DO DASHBOARD
+# ====================================================================================================
+@app.route('/dashboard/stats', methods=['GET'])
+def get_dashboard_stats():
+    connection = create_db_connection()
+    if connection:
+        try:
+            cursor = connection.cursor(dictionary=True)
+            
+            # Contar alunos
+            cursor.execute("SELECT COUNT(*) as total_alunos FROM alunos")
+            total_alunos = cursor.fetchone()['total_alunos']
+            
+            # Contar aulas ministradas (status 'completed')
+            cursor.execute("SELECT COUNT(*) as aulas_ministradas FROM classes WHERE status = 'completed'")
+            aulas_ministradas = cursor.fetchone()['aulas_ministradas']
+            
+            # Calcular frequência média
+            cursor.execute("SELECT COUNT(*) as total_presentes FROM attendance_records WHERE attendance_status = 'P'")
+            total_presentes = cursor.fetchone()['total_presentes']
+            
+            cursor.execute("SELECT COUNT(*) as total_registros FROM attendance_records")
+            total_registros = cursor.fetchone()['total_registros']
+            
+            frequencia_media = (total_presentes / total_registros * 100) if total_registros > 0 else 0
+            
+            cursor.close()
+            
+            return jsonify({
+                'success': True,
+                'total_alunos': total_alunos,
+                'aulas_ministradas': aulas_ministradas,
+                'frequencia_media': round(frequencia_media)
+            }), 200
+
+        except Error as e:
+            print(f"Erro ao buscar estatísticas: {e}")
+            return jsonify({'success': False, 'message': 'Erro interno do servidor'}), 500
+        finally:
+            connection.close()
+    return jsonify({'success': False, 'message': 'Erro de conexão com o banco de dados'}), 500
+
+# ====================================================================================================
 # ROTAS PARA ALUNOS (info_alunos)
 # ====================================================================================================
 @app.route('/alunos')

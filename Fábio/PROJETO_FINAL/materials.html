@@ -83,64 +83,58 @@
             <h1 class="page-title">Materiais</h1>
             
             <div id="materialsList" class="lesson-list">
-                </div>
+            </div>
         </main>
     </div>
     <script src="script.js"></script>
     <script>
-// Carregar materiais do localStorage
-function loadMaterials() {
-    const materialsList = document.getElementById('materialsList');
-    const savedMaterials = localStorage.getItem('courseMaterials');
-    const materials = savedMaterials ? JSON.parse(savedMaterials) : [];
-    const userRole = localStorage.getItem('userRole');
-    
-    materialsList.innerHTML = '';
-    
-    if (materials.length === 0) {
-        materialsList.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">Nenhum material disponível ainda.</p>';
-        return;
-    }
-    
-    materials.forEach(material => {
-        const materialDiv = document.createElement('div');
-        materialDiv.className = 'lesson-item';
-        materialDiv.innerHTML = `
-            <div class="lesson-title">${material.name}</div>
-            <div class="lesson-actions">
-                <button class="action-btn" onclick="downloadMaterial('${material.id}')">📥</button>
-                <button class="action-btn edit-btn" onclick="editMaterial('${material.id}')" style="display: ${userRole === 'teacher' ? 'inline-flex' : 'none'}">✏️</button>
-            </div>
-        `;
-        materialsList.appendChild(materialDiv);
-    });
-}
-
-// Função para download de material
-function downloadMaterial(materialId) {
-    const savedMaterials = localStorage.getItem('courseMaterials');
-    const materials = savedMaterials ? JSON.parse(savedMaterials) : [];
-    const material = materials.find(m => m.id === materialId);
-    
-    if (material) {
-        // Criar link de download
-        const link = document.createElement('a');
-        link.href = material.data;
-        link.download = material.name;
-        link.click();
+    async function loadMaterials() {
+        const materialsList = document.getElementById('materialsList');
+        materialsList.innerHTML = '';
         
-        alert(`Baixando: ${material.name}`);
-    }
-}
+        try {
+            const response = await fetch('http://127.0.0.1:5000/materials');
+            if (!response.ok) {
+                throw new Error(`Erro HTTP! Status: ${response.status}`);
+            }
+            const materials = await response.json();
+            
+            if (materials.length === 0) {
+                materialsList.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">Nenhum material disponível ainda.</p>';
+                return;
+            }
+            
+            materials.forEach(material => {
+                const materialDiv = document.createElement('div');
+                materialDiv.className = 'lesson-item';
+                materialDiv.innerHTML = `
+                    <div class="lesson-title">${material.name}</div>
+                    <div class="lesson-actions">
+                        <button class="action-btn" onclick="downloadMaterial('${material.file_path}', '${material.name}')">📥 Baixar</button>
+                    </div>
+                `;
+                materialsList.appendChild(materialDiv);
+            });
 
-// Carregar materiais quando a página carrega
-document.addEventListener('DOMContentLoaded', () => {
-    const userRole = localStorage.getItem('userRole');
-    loadMaterials();
-    
-    // Recarregar materiais a cada 5 segundos para sincronizar
-    setInterval(loadMaterials, 5000);
-});
-</script>
+        } catch (error) {
+            console.error('Erro ao carregar materiais:', error);
+            materialsList.innerHTML = '<p style="text-align: center; color: red; padding: 40px;">Erro ao carregar os materiais. Tente novamente mais tarde.</p>';
+        }
+    }
+
+    function downloadMaterial(filePath, fileName) {
+        const link = document.createElement('a');
+        link.href = `http://127.0.0.1:5000/materials/download/${filePath}`;
+        link.download = fileName;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadMaterials();
+    });
+    </script>
 </body>
 </html>

@@ -96,8 +96,7 @@
                     <div class="calendar-grid">
                         <h3>📋 Cronograma das Aulas</h3>
                         <div id="classSchedule" class="class-schedule">
-                            <!-- Aulas serão carregadas aqui -->
-                        </div>
+                            </div>
                     </div>
                     
                     <div class="legend">
@@ -126,17 +125,14 @@
         </main>
     </div>
     
-    <!-- Modal de Edição/Adição de Aula -->
     <div id="editModal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="modalTitle"></h3> <!-- Título dinâmico para Adicionar/Editar -->
-                <button class="close-btn" onclick="fecharModal()">×</button>
+                <h3 id="modalTitle"></h3> <button class="close-btn" onclick="fecharModal()">×</button>
             </div>
             <div class="modal-body">
                 <form id="classForm">
-                    <input type="hidden" id="classId"> <!-- Campo oculto para o ID da aula -->
-                    <div class="form-group">
+                    <input type="hidden" id="classId"> <div class="form-group">
                         <label for="classTitle">Título da Aula:</label>
                         <input type="text" id="classTitle" required>
                     </div>
@@ -169,7 +165,6 @@
         </div>
     </div>
 
-    <!-- Modal de Confirmação de Exclusão -->
     <div id="deleteConfirmModal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -186,7 +181,6 @@
         </div>
     </div>
 
-    <!-- Modal de Mensagem (para substituir alerts) -->
     <div id="messageModal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -211,7 +205,7 @@
             await loadSchedule();
             // Lógica para mostrar/esconder controles do professor (já existente no seu script.js)
             const userRole = localStorage.getItem('userRole');
-            if (userRole === 'teacher') { // 'admin' também é 'teacher' no backend agora
+            if (userRole === 'teacher') {
                 document.getElementById('teacherControls').style.display = 'block';
             } else {
                 // Para alunos, remover a funcionalidade de seleção de aula
@@ -233,18 +227,6 @@
                 }
             });
         });
-
-        // Função para exibir o modal de mensagem
-        function showMessageModal(title, message) {
-            document.getElementById('messageModalTitle').textContent = title;
-            document.getElementById('messageModalText').textContent = message;
-            document.getElementById('messageModal').classList.remove('hidden');
-        }
-
-        // Função para fechar o modal de mensagem
-        function closeMessageModal() {
-            document.getElementById('messageModal').classList.add('hidden');
-        }
 
         // Função para carregar o cronograma de aulas do backend
         async function loadSchedule() {
@@ -276,7 +258,7 @@
                         classDiv.style.cursor = 'default'; // Para alunos, não clicável
                     }
                     
-                    const dateObj = new Date(classItem.date + 'T19:00:00'); // Adiciona hora para evitar problemas de fuso horário
+                    const dateObj = new Date(classItem.date + 'T19:00:00');
                     const formattedDate = dateObj.toLocaleDateString('pt-BR', {
                         weekday: 'long',
                         year: 'numeric',
@@ -314,29 +296,24 @@
         }
         
         function selectClass(classId) {
-            // Remove seleção anterior
             document.querySelectorAll('.class-item').forEach(item => {
                 item.classList.remove('selected');
             });
             
-            // Adiciona seleção atual
             const selectedDiv = document.querySelector(`.class-item[data-id="${classId}"]`);
             if (selectedDiv) {
                 selectedDiv.classList.add('selected');
             }
             selectedClassId = classId;
-            console.log('Aula selecionada:', selectedClassId);
         }
         
-        // Função para abrir o modal de adição de aula
         function adicionarAula() {
-            selectedClassId = null; // Garante que é uma nova aula
+            selectedClassId = null;
             document.getElementById('modalTitle').textContent = '➕ Adicionar Nova Aula';
-            document.getElementById('classForm').reset(); // Limpa o formulário
+            document.getElementById('classForm').reset();
             document.getElementById('editModal').classList.remove('hidden');
         }
         
-        // Função para abrir o modal de edição de aula
         async function editarAula() {
             if (!selectedClassId) {
                 showMessageModal('Atenção', 'Selecione uma aula para editar.');
@@ -345,19 +322,16 @@
             
             try {
                 const response = await fetch(`http://127.0.0.1:5000/classes/${selectedClassId}`);
-                if (!response.ok) {
-                    throw new Error(`Erro HTTP! Status: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`Erro HTTP! Status: ${response.status}`);
                 const classItem = await response.json();
 
                 if (classItem) {
                     document.getElementById('modalTitle').textContent = '✏️ Editar Aula';
                     document.getElementById('classId').value = classItem.id;
                     document.getElementById('classTitle').value = classItem.title;
-                    document.getElementById('classDate').value = classItem.date; // Formato YYYY-MM-DD
+                    document.getElementById('classDate').value = classItem.date;
                     document.getElementById('classStatus').value = classItem.status;
                     document.getElementById('classDescription').value = classItem.description || '';
-                    
                     document.getElementById('editModal').classList.remove('hidden');
                 } else {
                     showMessageModal('Erro', 'Aula não encontrada para edição.');
@@ -368,7 +342,6 @@
             }
         }
         
-        // Função para remover aula
         function removerAula() {
             if (!selectedClassId) {
                 showMessageModal('Atenção', 'Selecione uma aula para remover.');
@@ -383,7 +356,6 @@
             }
         }
 
-        // Função para confirmar a remoção da aula após o modal de confirmação
         async function confirmarRemocaoAula() {
             if (!selectedClassId) {
                 showMessageModal('Erro', 'Nenhuma aula selecionada para remoção.');
@@ -397,8 +369,8 @@
                 if (data.success) {
                     showMessageModal('Sucesso', 'Aula removida com sucesso!');
                     fecharDeleteConfirmModal();
-                    await loadSchedule(); // Recarrega a lista de aulas
-                    selectedClassId = null; // Limpa a seleção
+                    await loadSchedule();
+                    selectedClassId = null;
                 } else {
                     showMessageModal('Erro', 'Erro ao remover aula: ' + (data.message || 'Erro desconhecido.'));
                 }
@@ -408,7 +380,6 @@
             }
         }
         
-        // Função para salvar (adicionar ou editar) aula
         async function salvarAula() {
             const title = document.getElementById('classTitle').value;
             const date = document.getElementById('classDate').value;
@@ -424,7 +395,7 @@
             let url = 'http://127.0.0.1:5000/classes/add';
             let method = 'POST';
 
-            if (selectedClassId) { // Se selectedClassId não for null, estamos editando
+            if (selectedClassId) {
                 url = `http://127.0.0.1:5000/classes/edit/${selectedClassId}`;
                 method = 'PUT';
             }
@@ -432,9 +403,7 @@
             try {
                 const response = await fetch(url, {
                     method: method,
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(classData),
                 });
                 const data = await response.json();
@@ -442,8 +411,8 @@
                 if (data.success) {
                     showMessageModal('Sucesso', `Aula ${selectedClassId ? 'atualizada' : 'adicionada'} com sucesso!`);
                     fecharModal();
-                    await loadSchedule(); // Recarrega a lista de aulas
-                    selectedClassId = null; // Limpa a seleção
+                    await loadSchedule();
+                    selectedClassId = null;
                 } else {
                     showMessageModal('Erro', `Erro ao ${selectedClassId ? 'atualizar' : 'adicionar'} aula: ` + (data.message || 'Erro desconhecido.'));
                 }
@@ -453,12 +422,10 @@
             }
         }
         
-        // Funções para fechar os modais
         function fecharModal() {
             document.getElementById('editModal').classList.add('hidden');
-            document.getElementById('classForm').reset(); // Limpa o formulário
-            selectedClassId = null; // Limpa a seleção ao fechar
-            // Remover a classe 'selected' de qualquer item de aula
+            document.getElementById('classForm').reset();
+            selectedClassId = null;
             document.querySelectorAll('.class-item.selected').forEach(item => {
                 item.classList.remove('selected');
             });
@@ -467,95 +434,48 @@
         function fecharDeleteConfirmModal() {
             document.getElementById('deleteConfirmModal').classList.add('hidden');
         }
-        
-        // Funções para o perfil de usuário (copiadas de script.js para garantir acesso)
-        function abrirWhatsApp() {
-            const whatsappLink = "https://chat.whatsapp.com/GHZuEpQhb5uGFROPWioy9o?mode=ac_c";
-            window.open(whatsappLink, '_blank');
-        }
-
-        async function logout() {
-            const userId = localStorage.getItem("userId");
-            if (userId) {
-                try {
-                    await fetch(`http://127.0.0.1:5000/logout/${userId}`, {
-                        method: 'POST',
-                    });
-                    console.log('Status online atualizado para offline.');
-                } catch (error) {
-                    console.error('Erro ao atualizar status de logout:', error);
-                }
-            }
-            localStorage.removeItem("isLoggedIn");
-            localStorage.removeItem("userId");
-            localStorage.removeItem("username");
-            localStorage.removeItem("userRole");
-            localStorage.removeItem("userName");
-            localStorage.removeItem("userStudentId");
-            window.location.href = "index.html";
-        }
-
-        const userAvatar = document.querySelector(".user-avatar")
-        if (userAvatar) {
-            userAvatar.addEventListener("click", () => {
-                if (confirm("Deseja fazer logout?")) {
-                    logout()
-                }
-            })
-            userAvatar.style.cursor = "pointer"
-            userAvatar.title = "Clique para fazer logout"
-        }
     </script>
     
     <style>
-        /* Seus estilos CSS existentes aqui (mantidos do seu código original) */
         .calendar-container {
             max-width: 1000px;
             margin: 0 auto;
         }
-        
         .info-card {
             background: white;
             border-radius: 15px;
             padding: 30px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
-        
         .schedule-info {
             background: #f8f9fa;
             padding: 20px;
             border-radius: 10px;
             margin-bottom: 30px;
         }
-        
         .schedule-info h2 {
             color: #4a90e2;
             margin-bottom: 15px;
         }
-        
         .fixed-schedule {
             display: flex;
             gap: 30px;
             flex-wrap: wrap;
         }
-        
         .time-info, .duration-info {
             display: flex;
             flex-direction: column;
             gap: 5px;
         }
-        
         .time-label, .duration-label {
             font-weight: bold;
             color: #666;
         }
-        
         .time-value, .duration-value {
             font-size: 1.2rem;
             color: #4a90e2;
             font-weight: bold;
         }
-        
         .teacher-controls {
             background: #fff3cd;
             padding: 20px;
@@ -563,24 +483,20 @@
             margin-bottom: 30px;
             border: 1px solid #ffeaa7;
         }
-        
         .teacher-controls h3 {
             color: #856404;
             margin-bottom: 15px;
         }
-        
         .control-buttons {
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
         }
-        
         .class-schedule {
             display: flex;
             flex-direction: column;
             gap: 15px;
         }
-        
         .class-item {
             border: 2px solid #f0f0f0;
             border-radius: 12px;
@@ -588,47 +504,25 @@
             cursor: pointer;
             transition: all 0.3s;
         }
-        
         .class-item:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
-        
         .class-item.selected {
             border-color: #4a90e2;
             background: #f0f8ff;
         }
-        
-        .class-item.completed {
-            border-left: 5px solid #28a745;
-        }
-        
-        .class-item.current {
-            border-left: 5px solid #ffc107;
-            background: #fff8e1;
-        }
-        
-        .class-item.future {
-            border-left: 5px solid #6c757d;
-        }
-        
-        .class-item.cancelled {
-            border-left: 5px solid #dc3545;
-            opacity: 0.7;
-        }
-        
+        .class-item.completed { border-left: 5px solid #28a745; }
+        .class-item.current { border-left: 5px solid #ffc107; background: #fff8e1; }
+        .class-item.future { border-left: 5px solid #6c757d; }
+        .class-item.cancelled { border-left: 5px solid #dc3545; opacity: 0.7; }
         .class-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 10px;
         }
-        
-        .class-header h4 {
-            margin: 0;
-            color: #333;
-        }
-        
+        .class-header h4 { margin: 0; color: #333; }
         .class-status {
             background: #e9ecef;
             padding: 4px 12px;
@@ -636,90 +530,25 @@
             font-size: 0.8rem;
             font-weight: bold;
         }
-        
-        .class-date, .class-time {
-            color: #666;
-            margin-bottom: 5px;
-        }
-        
-        .class-description {
-            color: #555;
-            font-style: italic;
-        }
-        
-        .legend {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 2px solid #f0f0f0;
-        }
-        
-        .legend h3 {
-            color: #333;
-            margin-bottom: 15px;
-        }
-        
-        .legend-items {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-        
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .legend-color {
-            width: 20px;
-            height: 4px;
-            border-radius: 2px;
-        }
-        
-        .legend-color.completed {
-            background: #28a745;
-        }
-        
-        .legend-color.current {
-            background: #ffc107;
-        }
-        
-        .legend-color.future {
-            background: #6c757d;
-        }
-        
-        .legend-color.cancelled {
-            background: #dc3545;
-        }
-        
-        .action-btn.danger {
-            background: #dc3545;
-        }
-        
-        .action-btn.danger:hover {
-            background: #c82333;
-        }
+        .class-date, .class-time { color: #666; margin-bottom: 5px; }
+        .class-description { color: #555; font-style: italic; }
+        .legend { margin-top: 30px; padding-top: 20px; border-top: 2px solid #f0f0f0; }
+        .legend h3 { color: #333; margin-bottom: 15px; }
+        .legend-items { display: flex; gap: 20px; flex-wrap: wrap; }
+        .legend-item { display: flex; align-items: center; gap: 8px; }
+        .legend-color { width: 20px; height: 4px; border-radius: 2px; }
+        .legend-color.completed { background: #28a745; }
+        .legend-color.current { background: #ffc107; }
+        .legend-color.future { background: #6c757d; }
+        .legend-color.cancelled { background: #dc3545; }
+        .action-btn.danger { background: #dc3545; }
+        .action-btn.danger:hover { background: #c82333; }
         
         @media (max-width: 768px) {
-            .fixed-schedule {
-                flex-direction: column;
-                gap: 15px;
-            }
-            
-            .control-buttons {
-                flex-direction: column;
-            }
-            
-            .class-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-            
-            .legend-items {
-                flex-direction: column;
-                gap: 10px;
-            }
+            .fixed-schedule { flex-direction: column; gap: 15px; }
+            .control-buttons { flex-direction: column; }
+            .class-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .legend-items { flex-direction: column; gap: 10px; }
         }
     </style>
 </body>

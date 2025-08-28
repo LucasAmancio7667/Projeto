@@ -37,7 +37,6 @@
         </div>
     </div>
     
-
     <div class="main-layout">
         <header class="header">
             <div class="logo">
@@ -48,7 +47,6 @@
                     <li id="navDiarioClasseAluno"><a href="dashboard.html" class="active">Diário de Classe</a></li>
                     <li id="navMateriaisAluno"><a href="materials.html">Materiais</a></li>
                     
-                    <!-- Links para Professor/Admin (visibilidade controlada por script.js) -->
                     <li id="navAdmin" style="display: none;"><a href="admin.html">Administração de Usuários</a></li>
                     <li id="navBancoDados" style="display: none;"><a href="database.html">Banco de Dados</a></li>
                     <li id="navDiarioClasseProf" style="display: none;"><a href="teacher-diary.html">Diário de Classe (Prof.)</a></li>
@@ -91,8 +89,7 @@
                         <span class="stat-value" id="presencePercentage">--%</span>
                     </div>
                     <div class="warning-message" id="absenceWarning">
-                        <!-- Mensagem de faltas será carregada aqui -->
-                    </div>
+                        </div>
                 </div>
             </div>
             
@@ -101,15 +98,13 @@
                     <thead>
                         <tr id="attendanceTableHeader">
                             <th class="name-header">Nome do Aluno</th>
-                            <!-- Datas das aulas serão carregadas aqui -->
                             <th>P</th>
                             <th>Fj</th>
                             <th>F</th>
                         </tr>
                     </thead>
                     <tbody id="attendanceTableBody">
-                        <!-- Dados de presença do aluno serão carregados aqui -->
-                    </tbody>
+                        </tbody>
                 </table>
             </div>
         </main>
@@ -270,45 +265,6 @@
                 absenceWarningElement.innerHTML = `Você ainda tem <strong>${remainingAbsences} faltas</strong> para não ser desclassificado(a).`;
                 absenceWarningElement.style.color = 'green';
             }
-        }
-
-
-        // Funções de navegação e logout (copiadas de script.js para garantir acesso)
-        function abrirWhatsApp() {
-            const whatsappLink = "https://chat.whatsapp.com/GHZuEpQhb5uGFROPWioy9o?mode=ac_c";
-            window.open(whatsappLink, '_blank');
-        }
-
-        async function logout() {
-            const userId = localStorage.getItem("userId");
-            if (userId) {
-                try {
-                    await fetch(`http://127.0.0.1:5000/logout/${userId}`, {
-                        method: 'POST',
-                    });
-                    console.log('Status online atualizado para offline.');
-                } catch (error) {
-                    console.error('Erro ao atualizar status de logout:', error);
-                }
-            }
-            localStorage.removeItem("isLoggedIn");
-            localStorage.removeItem("userId");
-            localStorage.removeItem("username");
-            localStorage.removeItem("userRole");
-            localStorage.removeItem("userName");
-            localStorage.removeItem("userStudentId");
-            window.location.href = "index.html";
-        }
-
-        const userAvatar = document.querySelector(".user-avatar")
-        if (userAvatar) {
-            userAvatar.addEventListener("click", () => {
-                if (confirm("Deseja fazer logout?")) {
-                    logout()
-                }
-            })
-            userAvatar.style.cursor = "pointer"
-            userAvatar.title = "Clique para fazer logout"
         }
     </script>
 </body>

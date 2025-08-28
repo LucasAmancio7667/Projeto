@@ -67,20 +67,20 @@
             
             <div class="teacher-stats">
                 <div class="stat-card">
-                    <div class="stat-number">4</div>
+                    <div class="stat-number" id="totalAlunos">--</div>
                     <div class="stat-label">Alunos Matriculados</div>
                 </div>
                 
                 <div class="stat-card">
-                    <div class="stat-number">5</div>
+                    <div class="stat-number" id="aulasMinistradas">--</div>
                     <div class="stat-label">Aulas Ministradas</div>
                 </div>
                 
                 <div class="stat-card">
-                    <div class="stat-number">85%</div>
+                    <div class="stat-number" id="frequenciaMedia">--%</div>
                     <div class="stat-label">Frequência Média</div>
                 </div>
-                </div>
+            </div>
             
             <div class="quick-actions">
                 <h2>Ações Rápidas</h2>
@@ -99,11 +99,27 @@
                         <div class="action-icon">📁</div>
                         <div class="action-text">Gerenciar Materiais</div>
                     </a>
-                    </div>
+                </div>
             </div>
             
         </main>
     </div>
     <script src="script.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const response = await fetch('http://127.0.0.1:5000/dashboard/stats');
+            const data = await response.json();
+            
+            if (data.success) {
+                document.getElementById('totalAlunos').textContent = data.total_alunos;
+                document.getElementById('aulasMinistradas').textContent = data.aulas_ministradas;
+                document.getElementById('frequenciaMedia').textContent = `${data.frequencia_media}%`;
+            }
+        } catch (error) {
+            console.error('Erro ao carregar estatísticas:', error);
+        }
+    });
+    </script>
 </body>
 </html>
