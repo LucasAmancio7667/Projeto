@@ -14,7 +14,7 @@ db_config = {
     'host': 'localhost',
     'database': 'Scratch',
     'user': 'root',
-    'password': '1234' # SUA SENHA AQUI
+    'password': 'root' # SUA SENHA AQUI
 }
 
 # ADIÇÃO: Configuração para uploads de materiais
