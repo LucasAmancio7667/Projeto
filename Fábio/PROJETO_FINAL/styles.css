@@ -247,7 +247,7 @@ body {
   background: #4a90e2;
   color: white;
   border: none;
-  padding: 10px 15px;
+  padding: 12px 15px;
   border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.3s;
@@ -1109,7 +1109,8 @@ body {
 
 .form-group input,
 .form-group textarea,
-.form-group select { /* ADIÇÃO: Inclua 'select' aqui */
+.form-group select,
+.attendance-status-select { /* ADIÇÃO: Inclua 'select' aqui */
   width: 100%;
   padding: 12px;
   border: 2px solid #e0e0e0;
@@ -1263,16 +1264,36 @@ body {
     cursor: not-allowed;
 }
 
-/* Correção para alinhamento dos botões no database.html */
-.database-controls .action-btn.primary {
-    margin-left: auto; /* Mágica do Flexbox: empurra o botão para a direita */
-    align-self: flex-end; /* Garante o alinhamento vertical com os outros botões */
+/* ===== ESTILO E ALINHAMENTO FINAL PARA OS CONTROLES DO DATABASE ===== */
+
+.database-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
 }
 
-/* Container para alinhar os botões de ação lado a lado */
-.action-buttons-container {
-    display: flex; /* Ativa o Flexbox */
-    gap: 10px; /* Adiciona um espaço entre os botões */
-    align-self: flex-end; /* CORRIGIDO: Alinha o container na parte de baixo */
-    margin-left: auto; /* Empurra o container para a direita */
+.actions-group {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+/* 1. Devolve o estilo para a caixa de pesquisa e o seletor */
+.control-group select,
+.control-group input {
+    padding: 10px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+/* 2. Devolve a aparência original aos botões, mantendo a altura correta */
+.database-controls .action-btn {
+    padding: 12px 15px; /* 12px (cima/baixo) e 15px (lados) */
 }

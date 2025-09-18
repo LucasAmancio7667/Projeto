@@ -80,28 +80,25 @@
         <main class="content">
             <h1 class="page-title">🗄️ Gerenciamento de Banco de Dados</h1>
             
-            <div class="database-controls">
-                <div class="table-selector">
-                    <label for="tableSelect">Selecionar Tabela:</label>
-                    <select id="tableSelect" onchange="changeTable()">
-                        <option value="info_alunos">Informações dos Alunos</option>
-                        <option value="status_alunos">Status Geral dos Alunos</option>
-                        <option value="login_alunos">Usuários de Login</option>
-                    </select>
-                </div>
-                <div class="search-and-actions-wrapper">
-                    <div class="search-box" style="display: flex; align-items: flex-end; gap: 10px;">
-                        <div>
-                            <label for="searchInput">Pesquisar:</label>
-                            <input type="text" id="searchInput" placeholder="Pesquisar em todo o banco de dados...">
-                        </div>
-                        <button class="action-btn small" onclick="triggerSearch()">Pesquisar</button>
-                    </div>
-                    <div class="database-actions">
-                        <button class="action-btn primary" onclick="addRecord()">Adicionar Registro</button>
-                    </div>
-                </div>
+        <div class="database-controls">
+            <div class="control-group">
+                <label for="tableSelect">Selecionar Tabela:</label>
+                <select id="tableSelect" onchange="changeTable()">
+                    <option value="info_alunos">Informações dos Alunos</option>
+                    <option value="status_alunos">Status Geral dos Alunos</option>
+                    <option value="login_alunos">Usuários de Login</option>
+                </select>
             </div>
+
+            <div class="actions-group">
+                <div class="control-group">
+                    <label for="searchInput">Pesquisar:</label>
+                    <input type="text" id="searchInput" placeholder="Pesquisar em todo o banco de dados...">
+                </div>
+                <button class="action-btn" onclick="triggerSearch()">Pesquisar</button>
+                <button class="action-btn primary" onclick="addRecord()">Adicionar Registro</button>
+            </div>
+        </div>
 
             <div id="table_info_alunos" class="database-table-container">
                 <h2>Informações dos Alunos</h2>
