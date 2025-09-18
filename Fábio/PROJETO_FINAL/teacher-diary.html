@@ -39,7 +39,7 @@
     <div class="main-layout">
         <header class="header">
             <div class="logo">
-                <img src=img/scratch.png height=150 width=150 alt="Scratch Logo" id="scratch-logo">
+                <img src="img/scratch.png" height="150" width="150" alt="Scratch Logo" id="scratch-logo">
             </div>
             <nav>
                 <ul class="nav-menu">
@@ -71,7 +71,7 @@
                 </ul>
             </nav>
             <div class="user-profile">
-                <div class="user-avatar"><img src=img/icon-user.png height= 40px width= 40px alt="Icone do Perfil"></div>
+                <div class="user-avatar"><img src="img/icon-user.png" height="40px" width="40px" alt="Icone do Perfil"></div>
             </div>
         </header>
         
@@ -101,6 +101,7 @@
                     <tbody id="attendanceTableBody">
                         </tbody>
                 </table>
+                 <div class="pagination-controls" id="paginationControls"></div>
             </div>
         </main>
     </div>
@@ -108,12 +109,13 @@
     <script src="script.js"></script>
     <script>
         let allClasses = [];
-        let allStudents = [];
         let currentAttendanceRecords = [];
+        let attendanceState = {}; // Guarda as alterações de presença
+        
 
         document.addEventListener('DOMContentLoaded', async () => {
             await fetchClasses();
-            await fetchStudents();
+            // A busca de alunos agora acontece quando uma aula é selecionada
         });
 
         async function fetchClasses() {
@@ -139,60 +141,78 @@
             });
         }
 
-        async function fetchStudents() {
-            try {
-                const response = await fetch('http://127.0.0.1:5000/alunos');
-                if (!response.ok) throw new Error(`Erro HTTP! Status: ${response.status}`);
-                allStudents = await response.json();
-                allStudents.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }));
-            } catch (error) {
-                console.error('Erro ao buscar alunos:', error);
-                if (window.showMessageModal) showMessageModal('Erro', 'Não foi possível carregar a lista de alunos.');
-            }
-        }
-
         async function loadAttendanceForSelectedClass() {
             const selectedClassId = document.getElementById('classSelect').value;
             const attendanceTableBody = document.getElementById('attendanceTableBody');
             attendanceTableBody.innerHTML = '';
+            document.getElementById('paginationControls').innerHTML = ''; // Limpa a paginação
 
             if (!selectedClassId) {
                 currentAttendanceRecords = [];
+                attendanceState = {}; // Limpa o estado
                 return;
             }
 
             try {
+                // 1. Busca todos os registos de presença para a aula selecionada
                 const response = await fetch('http://127.0.0.1:5000/attendance');
                 if (!response.ok) throw new Error(`Erro HTTP! Status: ${response.status}`);
                 const allAttendance = await response.json();
                 currentAttendanceRecords = allAttendance.filter(record => record.class_id == selectedClassId);
-                displayAttendanceTable(selectedClassId);
+                
+                // 2. Inicializa o estado com os dados do banco de dados
+                attendanceState = {};
+                currentAttendanceRecords.forEach(rec => {
+                    attendanceState[rec.student_id] = rec.attendance_status;
+                });
+
+                // 3. Carrega a primeira página de alunos
+                fetchStudentsForDiary(1);
+
             } catch (error) {
-                console.error('Erro ao buscar registros de presença:', error);
-                if (window.showMessageModal) showMessageModal('Erro', 'Não foi possível carregar os registros de presença para esta aula.');
+                console.error('Erro ao buscar registos de presença:', error);
+                if (window.showMessageModal) showMessageModal('Erro', 'Não foi possível carregar os registos de presença para esta aula.');
             }
         }
 
-        function displayAttendanceTable(selectedClassId) {
+        async function fetchStudentsForDiary(page = 1) {
+            currentPage = page;
+            const selectedClassId = document.getElementById('classSelect').value;
+            if (!selectedClassId) return;
+
+            try {
+                const response = await fetch(`http://127.0.0.1:5000/alunos?page=${page}&limit=${rowsPerPage}`);
+                if (!response.ok) throw new Error(`Erro HTTP! Status: ${response.status}`);
+                const data = await response.json();
+
+                displayAttendanceTable(data.alunos, selectedClassId);
+                setupPaginationForDiary(data.total, page);
+
+            } catch (error) {
+                 console.error('Erro ao buscar alunos:', error);
+                if (window.showMessageModal) showMessageModal('Erro', 'Não foi possível carregar a lista de alunos.');
+            }
+        }
+
+        function displayAttendanceTable(studentsOnPage, selectedClassId) {
             const attendanceTableBody = document.getElementById('attendanceTableBody');
             attendanceTableBody.innerHTML = '';
 
-            if (allStudents.length === 0) {
+            if (studentsOnPage.length === 0) {
                 attendanceTableBody.innerHTML = `<tr><td colspan="3" style="text-align: center;">Nenhum aluno encontrado.</td></tr>`;
                 return;
             }
 
-            allStudents.forEach(student => {
+            studentsOnPage.forEach(student => {
                 const row = document.createElement('tr');
-                const existingRecord = currentAttendanceRecords.find(rec => rec.student_id == student.id);
-                const recordId = existingRecord ? existingRecord.id : ''; 
-                const currentStatus = existingRecord ? existingRecord.attendance_status : 'F';
+                // O status atual vem do nosso objeto de estado, ou 'F' (Falta) por defeito
+                const currentStatus = attendanceState[student.id] || 'F';
 
                 row.innerHTML = `
                     <td>${student.id}</td>
                     <td>${student.nome}</td>
                     <td>
-                        <select class="attendance-status-select" data-student-id="${student.id}" data-class-id="${selectedClassId}" data-record-id="${recordId}">
+                        <select class="attendance-status-select" data-student-id="${student.id}" onchange="updateAttendanceState(${student.id}, this.value)">
                             <option value="P" ${currentStatus === 'P' ? 'selected' : ''}>Presente</option>
                             <option value="F" ${currentStatus === 'F' ? 'selected' : ''}>Falta</option>
                             <option value="Fj" ${currentStatus === 'Fj' ? 'selected' : ''}>Falta Justificada</option>
@@ -201,6 +221,45 @@
                 `;
                 attendanceTableBody.appendChild(row);
             });
+        }
+        
+        // Função para guardar a alteração de um aluno no nosso objeto de estado
+        function updateAttendanceState(studentId, newStatus) {
+            attendanceState[studentId] = newStatus;
+        }
+
+        function setupPaginationForDiary(totalItems, currentPage) {
+            const paginationControls = document.getElementById('paginationControls');
+            paginationControls.innerHTML = '';
+            const totalPages = Math.ceil(totalItems / rowsPerPage);
+
+            const prevBtn = document.createElement('button');
+            prevBtn.textContent = '« Anterior';
+            prevBtn.className = 'action-btn small';
+            prevBtn.disabled = currentPage === 1;
+            prevBtn.onclick = () => fetchStudentsForDiary(currentPage - 1);
+            paginationControls.appendChild(prevBtn);
+
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, currentPage + 2);
+
+            if (startPage > 1) { paginationControls.appendChild(document.createTextNode('...')); }
+            for (let i = startPage; i <= endPage; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.textContent = i;
+                pageBtn.className = 'action-btn small';
+                if (i === currentPage) { pageBtn.classList.add('active'); }
+                pageBtn.onclick = () => fetchStudentsForDiary(i);
+                paginationControls.appendChild(pageBtn);
+            }
+            if (endPage < totalPages) { paginationControls.appendChild(document.createTextNode('...')); }
+            
+            const nextBtn = document.createElement('button');
+            nextBtn.textContent = 'Próxima »';
+            nextBtn.className = 'action-btn small';
+            nextBtn.disabled = currentPage === totalPages;
+            nextBtn.onclick = () => fetchStudentsForDiary(currentPage + 1);
+            paginationControls.appendChild(nextBtn);
         }
 
         async function saveAttendance() {
@@ -211,13 +270,19 @@
             }
 
             const attendanceUpdates = [];
-            document.querySelectorAll('#attendanceTableBody .attendance-status-select').forEach(select => {
+            // Itera sobre o nosso objeto de estado, não sobre a tabela
+            for (const studentId in attendanceState) {
                 attendanceUpdates.push({
-                    student_id: parseInt(select.dataset.studentId),
-                    class_id: parseInt(select.dataset.classId),
-                    attendance_status: select.value
+                    student_id: parseInt(studentId),
+                    class_id: parseInt(selectedClassId),
+                    attendance_status: attendanceState[studentId]
                 });
-            });
+            }
+
+            if (attendanceUpdates.length === 0) {
+                showMessageModal('Aviso', 'Nenhuma alteração de presença para salvar.', 'warning');
+                return;
+            }
 
             let successCount = 0;
             let errorCount = 0;
@@ -232,17 +297,11 @@
                     const data = await response.json();
                     if (data.success) {
                         successCount++;
-                        if (data.id) {
-                            const selectElement = document.querySelector(`select[data-student-id="${update.student_id}"][data-class-id="${update.class_id}"]`);
-                            if (selectElement) selectElement.dataset.recordId = data.id;
-                        }
                     } else {
                         errorCount++;
-                        console.error(`Erro ao salvar presença para aluno ${update.student_id}: ${data.message}`);
                     }
                 } catch (error) {
                     errorCount++;
-                    console.error(`Erro de rede/servidor ao salvar presença para aluno ${update.student_id}:`, error);
                 }
             }
 
@@ -253,7 +312,6 @@
                     showMessageModal('Atenção', `Presença salva para ${successCount} alunos, com ${errorCount} erros.`);
                 }
             }
-            await loadAttendanceForSelectedClass(); 
         }
     </script>
 </body>

@@ -124,12 +124,13 @@ def get_dashboard_stats():
 # ====================================================================================================
 # ROTAS PARA ALUNOS (info_alunos)
 # ====================================================================================================
-# Em Fábio/backend/app.py
 
 @app.route('/alunos')
 def get_alunos():
+    # Pega os parâmetros da URL, incluindo o novo termo de pesquisa
     page = request.args.get('page', 1, type=int)
     limit = request.args.get('limit', 20, type=int)
+    search = request.args.get('search', "", type=str) # Novo parâmetro de pesquisa
     offset = (page - 1) * limit
 
     connection = create_db_connection()
@@ -138,12 +139,34 @@ def get_alunos():
     if connection:
         try:
             cursor = connection.cursor(dictionary=True)
+            
+            # Constrói a base da query e os parâmetros de forma dinâmica
+            count_query = "SELECT COUNT(*) as count FROM alunos"
+            query = "SELECT id, turma, nome, email, telefone, data_nascimento, rg, cpf, endereco, escolaridade, escola, responsavel FROM alunos"
+            
+            where_clause = ""
+            params = []
 
-            cursor.execute("SELECT COUNT(*) as count FROM alunos")
+            if search:
+                # Procura o termo em várias colunas
+                where_clause = " WHERE nome LIKE %s OR email LIKE %s OR cpf LIKE %s OR rg LIKE %s OR telefone LIKE %s"
+                like_term = f"%{search}%"
+                params = [like_term, like_term, like_term, like_term, like_term]
+
+            # Adiciona a cláusula WHERE às queries
+            count_query += where_clause
+            query += where_clause
+            
+            # Query para contar os alunos (agora com o filtro)
+            cursor.execute(count_query, params)
             total_alunos = cursor.fetchone()['count']
 
-            query = "SELECT id, turma, nome, email, telefone, data_nascimento, rg, cpf, endereco, escolaridade, escola, responsavel FROM alunos ORDER BY nome LIMIT %s OFFSET %s"
-            cursor.execute(query, (limit, offset))
+            # Query para buscar os alunos (agora com o filtro e paginação)
+            query += " ORDER BY nome LIMIT %s OFFSET %s"
+            # Adiciona os parâmetros de limite e offset à lista de parâmetros
+            params.extend([limit, offset])
+            
+            cursor.execute(query, tuple(params))
 
             alunos = cursor.fetchall()
             for aluno in alunos:

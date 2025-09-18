@@ -41,7 +41,7 @@
     <div class="main-layout">
         <header class="header">
             <div class="logo">
-                <img src=img/scratch.png height=150 width=150 alt="Scratch Logo" id="scratch-logo">
+                <img src="img/scratch.png" height="150" width="150" alt="Scratch Logo" id="scratch-logo">
             </div>
             <nav>
                 <ul class="nav-menu">
@@ -73,7 +73,7 @@
                 </ul>
             </nav>
             <div class="user-profile">
-                <div class="user-avatar"><img src=img/icon-user.png height= 40px width= 40px alt="Icone do Perfil"></div>
+                <div class="user-avatar"><img src="img/icon-user.png" height="40px" width="40px" alt="Icone do Perfil"></div>
             </div>
         </header>
         
@@ -90,13 +90,15 @@
                     </select>
                 </div>
                 <div class="search-and-actions-wrapper">
-                    <div class="search-box">
-                        <label for="searchInput">Pesquisar:</label>
-                        <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Pesquisar na tabela atual...">
+                    <div class="search-box" style="display: flex; align-items: flex-end; gap: 10px;">
+                        <div>
+                            <label for="searchInput">Pesquisar:</label>
+                            <input type="text" id="searchInput" placeholder="Pesquisar em todo o banco de dados...">
+                        </div>
+                        <button class="action-btn small" onclick="triggerSearch()">Pesquisar</button>
                     </div>
                     <div class="database-actions">
                         <button class="action-btn primary" onclick="addRecord()">Adicionar Registro</button>
-                        <button class="action-btn secondary" onclick="editRecord()">Editar Registro</button>
                     </div>
                 </div>
             </div>
@@ -121,10 +123,10 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Dados dos alunos serão carregados aqui -->
-                    </tbody>
+                        </tbody>
                 </table>
-                <div class="pagination-controls" id="paginationControls"></div>
+                <div class="pagination-controls" id="paginationControls">
+                    </div>
             </div>
 
             <div id="table_status_alunos" class="database-table-container hidden">
@@ -140,8 +142,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Dados de status serão carregados aqui -->
-                    </tbody>
+                        </tbody>
                 </table>
             </div>
 
@@ -158,8 +159,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Dados de login serão carregados aqui -->
-                    </tbody>
+                        </tbody>
                 </table>
             </div>
 
@@ -184,8 +184,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Dados de atividades serão carregados aqui -->
-                    </tbody>
+                        </tbody>
                 </table>
             </div>
             

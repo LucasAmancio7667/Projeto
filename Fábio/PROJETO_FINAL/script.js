@@ -38,63 +38,8 @@ function closeConfirmModal() {
     if (modal) modal.classList.add('hidden');
 }
 
-// --- INÍCIO DO CÓDIGO DE ANIMAÇÃO DE PÁGINA ---
-
-const pageOrder = [
-    // Páginas do Aluno
-    'dashboard.html',
-    'materials.html',
-    // Páginas do Professor
-    'teacher-dashboard.html',
-    'admin.html',
-    'database.html',
-    'teacher-diary.html',
-    'teacher-materials.html',
-    // Páginas de Informações
-    'horario-onibus.html',
-    'calendario-aulas.html',
-    'endereco-aula.html',
-    'contato.html'
-];
-
-function handlePageTransition() {
-    const content = document.querySelector('.content');
-    if (!content) return;
-
-    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-    const previousPageIndexStr = sessionStorage.getItem('currentPageIndex');
-    const currentPageIndex = pageOrder.indexOf(currentPage);
-
-    content.classList.remove('slide-in-from-right', 'slide-in-from-left');
-
-    const applyAnimation = () => {
-        if (currentPageIndex === -1) {
-            sessionStorage.setItem('currentPageIndex', null);
-            return;
-        }
-
-        if (previousPageIndexStr && previousPageIndexStr !== 'null') {
-            const prevIndex = parseInt(previousPageIndexStr, 10);
-            if (currentPageIndex > prevIndex) {
-                content.classList.add('slide-in-from-right');
-            } else if (currentPageIndex < prevIndex) {
-                content.classList.add('slide-in-from-left');
-            }
-        }
-        
-        sessionStorage.setItem('currentPageIndex', currentPageIndex);
-    };
-
-    requestAnimationFrame(applyAnimation);
-}
-
-// --- FIM DO CÓDIGO DE ANIMAÇÃO DE PÁGINA ---
-
 // Lógica principal que executa após o carregamento da página
 document.addEventListener("DOMContentLoaded", () => {
-    // A chamada para a função de animação deve estar aqui
-    handlePageTransition();
-    
     const loginForm = document.getElementById("loginForm");
 
     if (loginForm) {
@@ -136,7 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (localStorage.getItem("isLoggedIn") === 'true') {
         const currentPage = window.location.pathname.split('/').pop();
         const strictTeacherPages = ['teacher-dashboard.html', 'admin.html', 'database.html', 'teacher-diary.html', 'teacher-materials.html'];
-        const strictStudentPages = ['dashboard.html'];
+        const strictStudentPages = ['dashboard.html', 'materials.html'];
         if (userRole === 'teacher' && strictStudentPages.includes(currentPage)) {
             window.location.href = "teacher-dashboard.html";
         } else if (userRole === 'student' && strictTeacherPages.includes(currentPage)) {
@@ -178,7 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (window.location.pathname.endsWith('database.html')) {
-        window.fetchAlunosFromBackend();
+        window.fetchAlunosFromBackend(1); // Carrega a primeira página por defeito
     }
 
     document.addEventListener('keydown', (e) => {
@@ -218,21 +163,23 @@ window.abrirWhatsApp = function() {
     window.open("https://chat.whatsapp.com/GHZuEpQhb5uGFROPWioy9o?mode=ac_c", '_blank');
 }
 
+// FUNÇÕES DE CRUD DE ALUNOS E TABELA PRINCIPAL
 let currentPage = 1;
-const rowsPerPage = 20; // Define quantos alunos serão exibidos por página
+const rowsPerPage = 20;
 
-window.fetchAlunosFromBackend = async function(page = 1) {
+window.fetchAlunosFromBackend = async function(page = 1, searchTerm = "") {
     currentPage = page;
     try {
-        const response = await fetch(`http://127.0.0.1:5000/alunos?page=${page}&limit=${rowsPerPage}`);
+        // A URL agora inclui o parâmetro de pesquisa, se houver
+        const response = await fetch(`http://127.0.0.1:5000/alunos?page=${page}&limit=${rowsPerPage}&search=${searchTerm}`);
         if (!response.ok) throw new Error(`Erro HTTP! Status: ${response.status}`);
-
+        
         const data = await response.json();
         const alunos = data.alunos;
         const totalAlunos = data.total;
 
         displayAlunosInInfoTable(alunos); 
-        setupPagination(totalAlunos, page);
+        setupPagination(totalAlunos, page, searchTerm); // Passa o termo de pesquisa para a paginação
 
     } catch (error) {
         console.error('Erro ao buscar alunos:', error);
@@ -240,50 +187,6 @@ window.fetchAlunosFromBackend = async function(page = 1) {
         if (tbody) tbody.innerHTML = `<tr><td colspan="12" style="text-align: center; color: red;">Erro ao carregar dados dos alunos.</td></tr>`;
     }
 };
-
-function setupPagination(totalItems, currentPage) {
-    const paginationControls = document.getElementById('paginationControls');
-    if (!paginationControls) return;
-    paginationControls.innerHTML = '';
-
-    const totalPages = Math.ceil(totalItems / rowsPerPage);
-
-    const prevBtn = document.createElement('button');
-    prevBtn.textContent = '« Anterior';
-    prevBtn.className = 'action-btn small';
-    prevBtn.disabled = currentPage === 1;
-    prevBtn.onclick = () => window.fetchAlunosFromBackend(currentPage - 1);
-    paginationControls.appendChild(prevBtn);
-
-    let startPage = Math.max(1, currentPage - 2);
-    let endPage = Math.min(totalPages, currentPage + 2);
-
-    if (startPage > 1) {
-        paginationControls.appendChild(document.createTextNode('...'));
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-        const pageBtn = document.createElement('button');
-        pageBtn.textContent = i;
-        pageBtn.className = 'action-btn small';
-        if (i === currentPage) {
-            pageBtn.classList.add('active'); 
-        }
-        pageBtn.onclick = () => window.fetchAlunosFromBackend(i);
-        paginationControls.appendChild(pageBtn);
-    }
-
-    if (endPage < totalPages) {
-        paginationControls.appendChild(document.createTextNode('...'));
-    }
-
-    const nextBtn = document.createElement('button');
-    nextBtn.textContent = 'Próxima »';
-    nextBtn.className = 'action-btn small';
-    nextBtn.disabled = currentPage === totalPages;
-    nextBtn.onclick = () => window.fetchAlunosFromBackend(currentPage + 1);
-    paginationControls.appendChild(nextBtn);
-}
 
 function displayAlunosInInfoTable(alunos) {
     const tbody = document.querySelector('#table_info_alunos tbody');
@@ -299,6 +202,44 @@ function displayAlunosInInfoTable(alunos) {
         tbody.appendChild(row);
     });
 };
+
+function setupPagination(totalItems, currentPage, searchTerm = "") {
+    const paginationControls = document.getElementById('paginationControls');
+    if (!paginationControls) return;
+    paginationControls.innerHTML = '';
+    
+    const totalPages = Math.ceil(totalItems / rowsPerPage);
+
+    const prevBtn = document.createElement('button');
+    prevBtn.textContent = '« Anterior';
+    prevBtn.className = 'action-btn small';
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.onclick = () => window.fetchAlunosFromBackend(currentPage - 1, searchTerm);
+    paginationControls.appendChild(prevBtn);
+
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, currentPage + 2);
+
+    if (startPage > 1) { paginationControls.appendChild(document.createTextNode('...')); }
+    for (let i = startPage; i <= endPage; i++) {
+        const pageBtn = document.createElement('button');
+        pageBtn.textContent = i;
+        pageBtn.className = 'action-btn small';
+        if (i === currentPage) { pageBtn.classList.add('active'); }
+        pageBtn.onclick = () => window.fetchAlunosFromBackend(i, searchTerm);
+        paginationControls.appendChild(pageBtn);
+    }
+    if (endPage < totalPages) { paginationControls.appendChild(document.createTextNode('...')); }
+    
+    const nextBtn = document.createElement('button');
+    nextBtn.textContent = 'Próxima »';
+    nextBtn.className = 'action-btn small';
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.onclick = () => window.fetchAlunosFromBackend(currentPage + 1, searchTerm);
+    paginationControls.appendChild(nextBtn);
+}
+
+function validateAlunoForm(alunoData, isEdit = false) { return true; };
 
 async function sendAlunoToBackend(alunoData) {
     if (!validateAlunoForm(alunoData, false)) return;
@@ -316,7 +257,7 @@ async function sendAlunoToBackend(alunoData) {
             }
             showMessageModal('Sucesso!', successMessage, 'success');
             closeAddAlunoModal();
-            await window.fetchAlunosFromBackend(); 
+            await window.fetchAlunosFromBackend(currentPage); 
         } else {
             showMessageModal('Erro', 'Erro ao adicionar aluno: ' + (data.message || 'Erro desconhecido.'), 'error');
         }
@@ -325,14 +266,61 @@ async function sendAlunoToBackend(alunoData) {
     }
 }
 
+window.editAluno = async function(alunoId) {
+    try {
+        const response = await fetch(`http://127.0.0.1:5000/alunos/${alunoId}`);
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        const aluno = await response.json();
+
+        document.getElementById('editAlunoId').value = aluno.id;
+        document.getElementById('editTurma').value = aluno.turma;
+        document.getElementById('editNome').value = aluno.nome;
+        document.getElementById('editEmail').value = aluno.email;
+        document.getElementById('editTelefone').value = aluno.telefone;
+        document.getElementById('editDataNascimento').value = aluno.data_nascimento;
+        document.getElementById('editRg').value = aluno.rg;
+        document.getElementById('editCpf').value = aluno.cpf;
+        document.getElementById('editEndereco').value = aluno.endereco;
+        document.getElementById('editEscolaridade').value = aluno.escolaridade;
+        document.getElementById('editEscola').value = aluno.escola;
+        document.getElementById('editResponsavel').value = aluno.responsavel;
+
+        document.getElementById('editAlunoModal').classList.remove('hidden');
+    } catch (error) {
+        console.error('Erro ao buscar dados do aluno para edição:', error);
+        showMessageModal('Erro', 'Não foi possível carregar os dados do aluno para edição.', 'error');
+    }
+};
+
+async function sendEditedAlunoToBackend(alunoId, alunoData) {
+    if (!validateAlunoForm(alunoData, true)) return;
+    try {
+        const response = await fetch(`http://127.0.0.1:5000/alunos/edit/${alunoId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(alunoData),
+        });
+        const data = await response.json();
+        if (data.success) {
+            showMessageModal('Sucesso!', 'Aluno atualizado com sucesso!', 'success');
+            closeEditAlunoModal();
+            await window.fetchAlunosFromBackend(currentPage);
+        } else {
+            showMessageModal('Erro', 'Erro ao atualizar aluno: ' + (data.message || 'Erro desconhecido.'), 'error');
+        }
+    } catch (error) {
+        showMessageModal('Erro de Conexão', 'Não foi possível conectar ao servidor para editar o aluno.', 'error');
+    }
+}
+
 window.deleteAluno = async function(alunoId) {
-    showConfirmModal('Confirmar Exclusão', `Tem certeza que deseja excluir o aluno com ID ${alunoId}? Esta ação não pode ser desfeita.`, async () => {
+    showConfirmModal('Confirmar Exclusão', `Tem certeza que deseja excluir o aluno com ID ${alunoId}? O seu utilizador de login também será apagado. Esta ação não pode ser desfeita.`, async () => {
         try {
             const response = await fetch(`http://127.0.0.1:5000/alunos/delete/${alunoId}`, { method: 'DELETE' });
             const data = await response.json();
             if (data.success) {
-                showMessageModal('Sucesso!', 'Aluno excluído com sucesso!', 'success');
-                await window.fetchAlunosFromBackend();
+                showMessageModal('Sucesso!', 'Aluno e utilizador de login excluídos com sucesso!', 'success');
+                await window.fetchAlunosFromBackend(currentPage);
             } else {
                 showMessageModal('Erro', 'Erro ao excluir aluno: ' + (data.message || 'Erro desconhecido.'), 'error');
             }
@@ -343,27 +331,124 @@ window.deleteAluno = async function(alunoId) {
 };
 
 // =====================================================================================
-// Funções que você resumiu, adicione o código completo se necessário
+// FUNÇÕES DA PÁGINA DE BANCO DE DADOS (adição de 18/09/2025)
 // =====================================================================================
 
-window.fetchStudentOverallStatusFromBackend = async function() {};
-function displayStudentOverallStatusTable(statuses) {};
-window.fetchLoginAlunosFromBackend = async function() {};
-function displayLoginAlunosTable(users) {};
-window.fetchAtividadesAlunosFromBackend = async function() {};
-function displayAtividadesAlunosTable(atividades) {};
-function validateAlunoForm(alunoData, isEdit = false) { return true; };
-window.editAluno = async function(alunoId) {};
-async function sendEditedAlunoToBackend(alunoId, alunoData) {};
-window.changeTable = function() {};
-window.searchTable = function() {};
-window.addRecord = function() {};
-window.editRecord = function() {};
-window.closeAddAlunoModal = () => {
-    document.getElementById('addAlunoModal').classList.add('hidden');
-    document.getElementById('addAlunoForm').reset();
+window.changeTable = function() {
+    document.getElementById('table_info_alunos').classList.add('hidden');
+    document.getElementById('table_status_alunos').classList.add('hidden');
+    document.getElementById('table_login_alunos').classList.add('hidden');
+
+    const selectedValue = document.getElementById('tableSelect').value;
+    const selectedTable = document.getElementById(`table_${selectedValue}`);
+    if (selectedTable) {
+        selectedTable.classList.remove('hidden');
+    }
+
+    if (selectedValue === 'status_alunos') {
+        fetchStudentOverallStatusFromBackend();
+    } else if (selectedValue === 'login_alunos') {
+        fetchLoginAlunosFromBackend();
+    }
 };
+
+window.addRecord = function() {
+    const selectedTable = document.getElementById('tableSelect').value;
+    if (selectedTable === 'info_alunos') {
+        document.getElementById('addAlunoModal').classList.remove('hidden');
+    } else {
+        showMessageModal('Aviso', 'A adição de novos registos só está disponível para a tabela "Informações dos Alunos".', 'warning');
+    }
+};
+
+window.triggerSearch = function() {
+    const searchTerm = document.getElementById('searchInput').value;
+    window.fetchAlunosFromBackend(1, searchTerm);
+}
+
+window.fetchStudentOverallStatusFromBackend = async function() {
+    const tbody = document.querySelector('#table_status_alunos tbody');
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">A carregar dados...</td></tr>`;
+
+    try {
+        const response = await fetch('http://127.0.0.1:5000/status_alunos');
+        if (!response.ok) throw new Error(`Erro HTTP! Status: ${response.status}`);
+        
+        const statuses = await response.json();
+        
+        tbody.innerHTML = ''; // Limpa a mensagem "A carregar"
+
+        if (statuses.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">Nenhum status de aluno encontrado.</td></tr>`;
+            return;
+        }
+
+        statuses.forEach(status => {
+            const row = document.createElement('tr');
+            // A sua tabela original tinha 5 colunas, adicionei placeholders para as últimas duas
+            row.innerHTML = `
+                <td>${status.student_name || ''}</td>
+                <td>${status.faltas !== null ? status.faltas : ''}</td>
+                <td>${status.situacao || ''}</td>
+                <td>-</td> 
+                <td>-</td>
+            `;
+            tbody.appendChild(row);
+        });
+
+    } catch (error) {
+        console.error('Erro ao buscar status dos alunos:', error);
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: red;">Erro ao carregar dados.</td></tr>`;
+    }
+};
+
+window.fetchLoginAlunosFromBackend = async function() {
+    const tbody = document.querySelector('#table_login_alunos tbody');
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">A carregar dados...</td></tr>`;
+
+    try {
+        const response = await fetch('http://127.0.0.1:5000/users');
+        if (!response.ok) throw new Error(`Erro HTTP! Status: ${response.status}`);
+        
+        const users = await response.json();
+        
+        // Filtra para mostrar apenas os alunos
+        const studentUsers = users.filter(user => user.role === 'student');
+
+        tbody.innerHTML = ''; // Limpa a mensagem "A carregar"
+
+        if (studentUsers.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">Nenhum utilizador de aluno encontrado.</td></tr>`;
+            return;
+        }
+
+        studentUsers.forEach(user => {
+            const row = document.createElement('tr');
+            // Formata a data do último login para ser mais legível
+            const lastLogin = user.last_login ? new Date(user.last_login).toLocaleString('pt-BR') : 'Nunca';
+            
+            row.innerHTML = `
+                <td>${user.username || ''}</td>
+                <td>${user.full_name || ''}</td>
+                <td>${lastLogin}</td>
+                <td>${user.total_logins !== null ? user.total_logins : '0'}</td>
+                <td>${user.online_status || 'Offline'}</td>
+            `;
+            tbody.appendChild(row);
+        });
+
+    } catch (error) {
+        console.error('Erro ao buscar utilizadores de login:', error);
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: red;">Erro ao carregar dados.</td></tr>`;
+    }
+};
+
+window.closeAddAlunoModal = () => {
+    const modal = document.getElementById('addAlunoModal');
+    if (modal) modal.classList.add('hidden');
+};
+
 window.closeEditAlunoModal = () => {
-    document.getElementById('editAlunoModal').classList.add('hidden');
-    document.getElementById('editAlunoForm').reset();
+    const modal = document.getElementById('editAlunoModal');
+    if (modal) modal.classList.add('hidden');
 };
