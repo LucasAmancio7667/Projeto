@@ -124,14 +124,27 @@ def get_dashboard_stats():
 # ====================================================================================================
 # ROTAS PARA ALUNOS (info_alunos)
 # ====================================================================================================
+# Em Fábio/backend/app.py
+
 @app.route('/alunos')
 def get_alunos():
+    page = request.args.get('page', 1, type=int)
+    limit = request.args.get('limit', 20, type=int)
+    offset = (page - 1) * limit
+
     connection = create_db_connection()
     alunos = []
+    total_alunos = 0
     if connection:
         try:
             cursor = connection.cursor(dictionary=True)
-            cursor.execute("SELECT id, turma, nome, email, telefone, data_nascimento, rg, cpf, endereco, escolaridade, escola, responsavel FROM alunos")
+
+            cursor.execute("SELECT COUNT(*) as count FROM alunos")
+            total_alunos = cursor.fetchone()['count']
+
+            query = "SELECT id, turma, nome, email, telefone, data_nascimento, rg, cpf, endereco, escolaridade, escola, responsavel FROM alunos ORDER BY nome LIMIT %s OFFSET %s"
+            cursor.execute(query, (limit, offset))
+
             alunos = cursor.fetchall()
             for aluno in alunos:
                 if aluno.get('data_nascimento'):
@@ -141,7 +154,11 @@ def get_alunos():
             print(f"Erro ao buscar alunos: {e}")
         finally:
             connection.close()
-    return jsonify(alunos)
+            
+    return jsonify({
+        'total': total_alunos,
+        'alunos': alunos
+    })
 
 @app.route('/alunos/<int:aluno_id>', methods=['GET'])
 def get_aluno_by_id(aluno_id):

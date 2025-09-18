@@ -218,19 +218,72 @@ window.abrirWhatsApp = function() {
     window.open("https://chat.whatsapp.com/GHZuEpQhb5uGFROPWioy9o?mode=ac_c", '_blank');
 }
 
-window.fetchAlunosFromBackend = async function() {
+let currentPage = 1;
+const rowsPerPage = 20; // Define quantos alunos serão exibidos por página
+
+window.fetchAlunosFromBackend = async function(page = 1) {
+    currentPage = page;
     try {
-        const response = await fetch('http://127.0.0.1:5000/alunos');
+        const response = await fetch(`http://127.0.0.1:5000/alunos?page=${page}&limit=${rowsPerPage}`);
         if (!response.ok) throw new Error(`Erro HTTP! Status: ${response.status}`);
-        let alunos = await response.json();
-        alunos.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }));
-        displayAlunosInInfoTable(alunos);
+
+        const data = await response.json();
+        const alunos = data.alunos;
+        const totalAlunos = data.total;
+
+        displayAlunosInInfoTable(alunos); 
+        setupPagination(totalAlunos, page);
+
     } catch (error) {
         console.error('Erro ao buscar alunos:', error);
         const tbody = document.querySelector('#table_info_alunos tbody');
         if (tbody) tbody.innerHTML = `<tr><td colspan="12" style="text-align: center; color: red;">Erro ao carregar dados dos alunos.</td></tr>`;
     }
 };
+
+function setupPagination(totalItems, currentPage) {
+    const paginationControls = document.getElementById('paginationControls');
+    if (!paginationControls) return;
+    paginationControls.innerHTML = '';
+
+    const totalPages = Math.ceil(totalItems / rowsPerPage);
+
+    const prevBtn = document.createElement('button');
+    prevBtn.textContent = '« Anterior';
+    prevBtn.className = 'action-btn small';
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.onclick = () => window.fetchAlunosFromBackend(currentPage - 1);
+    paginationControls.appendChild(prevBtn);
+
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, currentPage + 2);
+
+    if (startPage > 1) {
+        paginationControls.appendChild(document.createTextNode('...'));
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        const pageBtn = document.createElement('button');
+        pageBtn.textContent = i;
+        pageBtn.className = 'action-btn small';
+        if (i === currentPage) {
+            pageBtn.classList.add('active'); 
+        }
+        pageBtn.onclick = () => window.fetchAlunosFromBackend(i);
+        paginationControls.appendChild(pageBtn);
+    }
+
+    if (endPage < totalPages) {
+        paginationControls.appendChild(document.createTextNode('...'));
+    }
+
+    const nextBtn = document.createElement('button');
+    nextBtn.textContent = 'Próxima »';
+    nextBtn.className = 'action-btn small';
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.onclick = () => window.fetchAlunosFromBackend(currentPage + 1);
+    paginationControls.appendChild(nextBtn);
+}
 
 function displayAlunosInInfoTable(alunos) {
     const tbody = document.querySelector('#table_info_alunos tbody');

@@ -1242,3 +1242,23 @@ body {
     transform: translateY(0);
   }
 }
+
+/* Estilos para Paginação */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 20px;
+    background: white;
+    border-bottom-left-radius: 15px;
+    border-bottom-right-radius: 15px;
+}
+.pagination-controls .action-btn.active {
+    background: #357abd;
+    cursor: default;
+}
+.pagination-controls .action-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
