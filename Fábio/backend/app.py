@@ -3,8 +3,10 @@ import mysql.connector
 from mysql.connector import Error
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
-import random # ADIÇÃO: Para gerar senhas aleatórias
-import string # ADIÇÃO: Para caracteres de senhas aleatórias
+import random 
+import string 
+import click
+from manage_db import setup_database
 
 # CORREÇÃO AQUI: static_folder deve apontar para o nome real da sua pasta de frontend
 app = Flask(__name__, static_folder='../PROJETO_FINAL', static_url_path='/')
@@ -1268,6 +1270,12 @@ def delete_material(material_id):
             connection.close()
     return jsonify({'success': False, 'message': 'Erro de conexão com o banco de dados.'}), 500
 
+@app.cli.command("init-db")
+def init_db_command():
+    """Limpa os dados existentes e cria novas tabelas."""
+    setup_database()
+    click.echo("Banco de dados inicializado.")
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
+
