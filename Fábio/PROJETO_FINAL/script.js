@@ -344,12 +344,29 @@ function displayAlunosInInfoTable(alunos) {
     if (!tbody) return;
     tbody.innerHTML = '';
     if (alunos.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="12" style="text-align: center;">Nenhum aluno encontrado.</td></tr>`;
+        tbody.innerHTML = `<<tr><td colspan="13" style="text-align: center;">Nenhum aluno encontrado.</td></tr>`;
         return;
     }
     alunos.forEach(aluno => {
         const row = document.createElement('tr');
-        row.innerHTML = `<td>${aluno.turma || ''}</td><td>${aluno.nome || ''}</td><td>${aluno.email || ''}</td><td>${aluno.telefone || ''}</td><td>${aluno.data_nascimento || ''}</td><td>${aluno.rg || ''}</td><td>${aluno.cpf || ''}</td><td>${aluno.endereco || ''}</td><td>${aluno.escolaridade || ''}</td><td>${aluno.escola || ''}</td><td>${aluno.responsavel || ''}</td><td><button class="action-btn small" onclick="editAluno(${aluno.id})" title="Editar">✏️</button><button class="action-btn small danger" onclick="deleteAluno(${aluno.id})" title="Excluir">🗑️</button></td>`;
+        row.innerHTML = `
+            <td>${aluno.turma || ''}</td>
+            <td>${aluno.nome || ''}</td>
+            <td>${aluno.email || ''}</td>
+            <td>${aluno.telefone || ''}</td>
+            <td>${aluno.data_nascimento || ''}</td>
+            <td>${aluno.rg || ''}</td>
+            <td>${aluno.cpf || ''}</td>
+            <td>${aluno.endereco || ''}</td>
+            <td>${aluno.escolaridade || ''}</td>
+            <td>${aluno.escola || ''}</td>
+            <td>${aluno.responsavel || ''}</td>
+            <td>${aluno.status_matricula || 'Ativo'}</td>
+            <td class="database-actions-cell">
+                <button class="action-btn small" onclick="editAluno(${aluno.id})" title="Editar">✏️</button>
+                <button class="action-btn small danger" onclick="deleteAluno(${aluno.id})" title="Excluir">🗑️</button>
+            </td>
+        `;
         tbody.appendChild(row);
     });
 };
@@ -417,6 +434,7 @@ async function sendAlunoToBackend(alunoData) {
     }
 }
 
+// Substitua a sua função antiga window.editAluno por esta
 window.editAluno = async function(alunoId) {
     try {
         const response = await fetch(`http://127.0.0.1:5000/alunos/${alunoId}`);
@@ -435,6 +453,9 @@ window.editAluno = async function(alunoId) {
         document.getElementById('editEscolaridade').value = aluno.escolaridade;
         document.getElementById('editEscola').value = aluno.escola;
         document.getElementById('editResponsavel').value = aluno.responsavel;
+        
+        // LINHA CRUCIAL (AGORA CORRETA E DESCOMENTADA)
+        document.getElementById('editStatusMatricula').value = aluno.status_matricula || 'Ativo';
 
         document.getElementById('editAlunoModal').classList.remove('hidden');
     } catch (error) {

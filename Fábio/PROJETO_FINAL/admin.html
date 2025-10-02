@@ -88,7 +88,7 @@
                                 <th>Último Login</th>
                                 <th>Total de Logins</th>
                                 <th>Status Online</th>
-                                <th>ID de Aluno (se aplicável)</th>
+                                <th>Data de Cadastro</th> <th>ID de Aluno (se aplicável)</th>
                                 <th>Ações</th>
                             </tr>
                         </thead>
@@ -241,13 +241,17 @@
             tbody.innerHTML = '';
 
             if (users.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center;">Nenhum usuário encontrado.</td></tr>`;
+                // Corrigido para 10 colunas por causa da nova coluna
+                tbody.innerHTML = `<tr><td colspan="10" style="text-align: center;">Nenhum usuário encontrado.</td></tr>`;
                 return;
             }
 
             users.forEach(user => {
                 const row = document.createElement('tr');
                 const lastLogin = user.last_login ? new Date(user.last_login).toLocaleString('pt-BR') : 'Nunca';
+                // Nova variável para formatar a data de criação
+                const dataCriacao = user.data_criacao ? new Date(user.data_criacao).toLocaleString('pt-BR') : 'N/A';
+
                 row.innerHTML = `
                     <td>${user.id || ''}</td>
                     <td>${user.username || ''}</td>
@@ -256,7 +260,7 @@
                     <td>${lastLogin}</td>
                     <td>${user.total_logins !== null ? user.total_logins : ''}</td>
                     <td>${user.online_status || ''}</td>
-                    <td>${user.student_id !== null ? user.student_id : ''}</td>
+                    <td>${dataCriacao}</td> <td>${user.student_id !== null ? user.student_id : ''}</td>
                     <td>
                         <button class="action-btn small" onclick="openEditUserModal(${user.id})">Editar</button>
                         <button class="action-btn small danger" onclick="openDeleteUserConfirmModal(${user.id}, '${user.username}')">Excluir</button>

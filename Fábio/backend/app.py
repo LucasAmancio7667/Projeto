@@ -7,17 +7,14 @@ import random
 import string
 import click
 from manage_db import setup_database
+from routes.alunos_bp import alunos_bp
+from routes.forum_bp import forum_bp
 
 # CORREÇÃO AQUI: static_folder deve apontar para o nome real da sua pasta de frontend
 app = Flask(__name__, static_folder='../PROJETO_FINAL', static_url_path='/')
+app.register_blueprint(alunos_bp)
+app.register_blueprint(forum_bp)
 
-# Configurações do Banco de Dados MySQL
-db_config = {
-    'host': 'localhost',
-    'database': 'Scratch',
-    'user': 'root',
-    'password': 'root' # SUA SENHA AQUI
-}
 
 # ADIÇÃO: Configuração para uploads de materiais
 UPLOAD_FOLDER = os.path.join(app.static_folder, 'uploads')
@@ -25,48 +22,9 @@ if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-def create_db_connection():
-    """Cria e retorna uma conexão com o banco de dados."""
-    connection = None
-    try:
-        connection = mysql.connector.connect(**db_config)
-        if connection.is_connected():
-            print("Conexão com o banco de dados MySQL bem-sucedida!")
-    except Error as e:
-        print(f"Erro ao conectar ao MySQL: {e}")
-    return connection
 
 # ADIÇÃO: Função para gerar nome de usuário baseado nas iniciais do nome
-def generate_username(full_name, connection):
-    if not full_name:
-        return None
 
-    # Pega as iniciais de cada palavra no nome completo
-    parts = full_name.split()
-    initials = "".join([part[0].lower() for part in parts if part])
-
-    base_username = initials
-    username = base_username
-    counter = 1
-    
-    # Verifica se o username já existe no banco de dados
-    cursor = connection.cursor()
-    while True:
-        query = "SELECT COUNT(*) FROM users WHERE username = %s"
-        cursor.execute(query, (username,))
-        count = cursor.fetchone()[0]
-        if count == 0:
-            break
-        username = f"{base_username}{counter}"
-        counter += 1
-    cursor.close()
-    return username
-
-# ADIÇÃO: Função para gerar senha aleatória
-def generate_random_password(length=7):
-    characters = string.ascii_letters + string.digits + string.punctuation
-    password = ''.join(random.choice(characters) for i in range(length))
-    return password
 
 # Rota para servir a página HTML principal (index.html)
 @app.route('/')
@@ -83,6 +41,7 @@ def serve_static_files(filename):
 # ====================================================================================================
 @app.route('/dashboard/stats', methods=['GET'])
 def get_dashboard_stats():
+    from db_utils import create_db_connection
     connection = create_db_connection()
     if connection:
         try:
@@ -121,275 +80,28 @@ def get_dashboard_stats():
             connection.close()
     return jsonify({'success': False, 'message': 'Erro de conexão com o banco de dados'}), 500
 
-# ====================================================================================================
-# ROTAS PARA ALUNOS (info_alunos)
-# ====================================================================================================
-
-@app.route('/alunos')
-def get_alunos():
-    page = request.args.get('page', 1, type=int)
-    limit = request.args.get('limit', 20, type=int)
-    search = request.args.get('search', "", type=str)
-    offset = (page - 1) * limit
-
-    connection = create_db_connection()
-    alunos = []
-    total_alunos = 0
-    if connection:
-        try:
-            cursor = connection.cursor(dictionary=True)
-            
-            count_query = "SELECT COUNT(*) as count FROM alunos"
-            query = "SELECT id, turma, nome, email, telefone, data_nascimento, rg, cpf, endereco, escolaridade, escola, responsavel FROM alunos"
-            
-            where_clause = ""
-            params = []
-
-            if search:
-                where_clause = " WHERE nome LIKE %s OR email LIKE %s OR cpf LIKE %s OR rg LIKE %s OR telefone LIKE %s"
-                like_term = f"%{search}%"
-                params = [like_term, like_term, like_term, like_term, like_term]
-
-            count_query += where_clause
-            query += where_clause
-            
-            cursor.execute(count_query, params)
-            total_alunos = cursor.fetchone()['count']
-
-            query += " ORDER BY nome LIMIT %s OFFSET %s"
-            params.extend([limit, offset])
-            
-            cursor.execute(query, tuple(params))
-
-            alunos = cursor.fetchall()
-            for aluno in alunos:
-                if aluno.get('data_nascimento'):
-                    aluno['data_nascimento'] = aluno['data_nascimento'].strftime('%Y-%m-%d')
-            cursor.close()
-        except Error as e:
-            print(f"Erro ao buscar alunos: {e}")
-        finally:
-            connection.close()
-            
-    return jsonify({
-        'total': total_alunos,
-        'alunos': alunos
-    })
-
-@app.route('/alunos/<int:aluno_id>', methods=['GET'])
-def get_aluno_by_id(aluno_id):
-    connection = create_db_connection()
-    aluno = None
-    if connection:
-        try:
-            cursor = connection.cursor(dictionary=True)
-            query = "SELECT id, turma, nome, email, telefone, data_nascimento, rg, cpf, endereco, escolaridade, escola, responsavel FROM alunos WHERE id = %s"
-            cursor.execute(query, (aluno_id,))
-            aluno = cursor.fetchone()
-            cursor.close()
-            if aluno:
-                if aluno.get('data_nascimento'):
-                    aluno['data_nascimento'] = aluno['data_nascimento'].strftime('%Y-%m-%d')
-                return jsonify(aluno), 200
-            else:
-                return jsonify({'message': 'Aluno não encontrado!'}), 404
-        except Error as e:
-            print(f"Erro ao buscar aluno por ID: {e}")
-            return jsonify({'message': 'Erro interno do servidor'}), 500
-        finally:
-            connection.close()
-    return jsonify({'message': 'Erro de conexão com o banco de dados'}), 500
-
-@app.route('/alunos/add', methods=['POST'])
-def add_aluno():
-    if request.method == 'POST':
-        aluno_data = request.get_json()
-        print(f"Dados recebidos para adicionar aluno: {aluno_data}")
-
-        if not aluno_data or not aluno_data.get('nome') or not aluno_data.get('turma'):
-            print("Erro: Nome e Turma são obrigatórios.")
-            return jsonify({'success': False, 'message': 'Nome e Turma são obrigatórios'}), 400
-
-        allowed_turmas = ['25.1 - T1', '25.1 - T2', '25.2 - T1']
-        if aluno_data.get('turma') not in allowed_turmas:
-            print(f"Erro: Turma inválida - {aluno_data.get('turma')}")
-            return jsonify({'success': False, 'message': 'Turma inválida. Opções válidas: 25.1 - T1, 25.1 - T2, 25.2 - T1.'}), 400
-        
-        if not aluno_data.get('cpf'):
-            print("Erro: CPF é obrigatório.")
-            return jsonify({'success': False, 'message': 'CPF é obrigatório.'}), 400
-        if not aluno_data.get('responsavel'):
-            print("Erro: Responsável é obrigatório.")
-            return jsonify({'success': False, 'message': 'Responsável é obrigatório.'}), 400
-
-        connection = create_db_connection()
-        if connection:
-            try:
-                cursor = connection.cursor()
-
-                query_alunos = """
-                INSERT INTO alunos (turma, nome, email, telefone, data_nascimento, rg, cpf, endereco, escolaridade, escola, responsavel)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """
-                values_alunos = (
-                    aluno_data.get('turma'),
-                    aluno_data.get('nome'),
-                    aluno_data.get('email'),
-                    aluno_data.get('telefone'),
-                    aluno_data.get('data_nascimento'),
-                    aluno_data.get('rg'),
-                    aluno_data.get('cpf'),
-                    aluno_data.get('endereco'),
-                    aluno_data.get('escolaridade'),
-                    aluno_data.get('escola'),
-                    aluno_data.get('responsavel')
-                )
-                cursor.execute(query_alunos, values_alunos)
-                aluno_id = cursor.lastrowid
-
-                aluno_full_name = aluno_data.get('nome')
-                generated_username = generate_username(aluno_full_name, connection)
-                generated_password = generate_random_password()
-                hashed_password = generate_password_hash(generated_password)
-
-                query_users = """
-                INSERT INTO users (username, password_hash, full_name, role, student_id)
-                VALUES (%s, %s, %s, %s, %s)
-                """
-                values_users = (generated_username, hashed_password, aluno_full_name, 'student', aluno_id)
-                cursor.execute(query_users, values_users)
-
-                query_status = "INSERT INTO status_alunos (id, faltas, situacao) VALUES (%s, %s, %s)"
-                values_status = (aluno_id, 0, 'Ativo')
-                cursor.execute(query_status, values_status)
-
-                query_atividades = """
-                INSERT INTO atividades_alunos (id, aula_1, aula_2, aula_3, aula_4, aula_5, aula_6, aula_7, aula_8, aula_9, aula_10, total_enviadas)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """
-                values_atividades = (aluno_id, 'Pendente', 'Pendente', 'Pendente', 'Pendente', 'Pendente', 'Pendente', 'Pendente', 'Pendente', 'Pendente', 'Pendente', 0)
-                cursor.execute(query_atividades, values_atividades)
-
-                connection.commit()
-                cursor.close()
-
-                return jsonify({
-                    'success': True,
-                    'message': 'Aluno e credenciais de login adicionados com sucesso!',
-                    'generated_username': generated_username,
-                    'generated_password': generated_password
-                }), 201
-
-            except Error as e:
-                print(f"Erro MySQL ao adicionar aluno e dados relacionados: {e}")
-                connection.rollback()
-                if e.errno == 1062:
-                    print(f"Erro de duplicidade detectado: {e.msg}")
-                    return jsonify({'success': False, 'message': f'Erro: Um registro com dados duplicados (email, CPF, RG ou telefone) já existe. Detalhes: {e.msg}'}), 409
-                return jsonify({'success': False, 'message': 'Erro interno do servidor'}), 500
-            finally:
-                if connection and connection.is_connected():
-                    connection.close()
-        return jsonify({'success': False, 'message': 'Erro de conexão com o banco de dados'}), 500
-
-@app.route('/alunos/delete/<int:aluno_id>', methods=['DELETE'])
-def delete_aluno(aluno_id):
-    connection = create_db_connection()
-    if connection:
-        try:
-            cursor = connection.cursor()
-            query = "DELETE FROM alunos WHERE id = %s"
-            cursor.execute(query, (aluno_id,))
-            connection.commit()
-            cursor.close()
-            if cursor.rowcount > 0:
-                return jsonify({'success': True, 'message': 'Aluno e dados relacionados excluídos com sucesso!'}), 200
-            else:
-                return jsonify({'success': False, 'message': 'Aluno não encontrado ou já excluído.'}), 404
-        except Error as e:
-            print(f"Erro ao deletar aluno: {e}")
-            connection.rollback()
-            return jsonify({'success': False, 'message': 'Erro interno do servidor'}), 500
-        finally:
-            connection.close()
-    return jsonify({'success': False, 'message': 'Erro de conexão com o banco de dados'}), 500
-
-@app.route('/alunos/edit/<int:aluno_id>', methods=['PUT'])
-def edit_aluno(aluno_id):
-    if request.method == 'PUT':
-        aluno_data = request.get_json()
-
-        if not aluno_data or not aluno_data.get('nome') or not aluno_id:
-            return jsonify({'success': False, 'message': 'ID do aluno e Nome são obrigatórios'}), 400
-
-        if 'turma' in aluno_data:
-            allowed_turmas = ['25.1 - T1', '25.1 - T2', '25.2 - T1']
-            if aluno_data['turma'] not in allowed_turmas:
-                return jsonify({'success': False, 'message': 'Turma inválida. Opções válidas: 25.1 - T1, 25.1 - T2, 25.2 - T1.'}), 400
-
-        connection = create_db_connection()
-        if connection:
-            try:
-                cursor = connection.cursor()
-                set_clauses = []
-                values = []
-                
-                updatable_fields = [
-                    'turma', 'nome', 'email', 'telefone', 'data_nascimento',
-                    'rg', 'cpf', 'endereco', 'escolaridade', 'escola', 'responsavel'
-                ]
-
-                for field in updatable_fields:
-                    if field in aluno_data:
-                        set_clauses.append(f"{field} = %s")
-                        values.append(aluno_data[field])
-
-                if not set_clauses:
-                    return jsonify({'success': False, 'message': 'Nenhum dado para atualizar para o aluno.'}), 400
-
-                query = f"UPDATE alunos SET {', '.join(set_clauses)} WHERE id = %s"
-                values.append(aluno_id)
-                
-                cursor.execute(query, tuple(values))
-                connection.commit()
-                cursor.close()
-
-                if cursor.rowcount > 0:
-                    if 'nome' in aluno_data:
-                        cursor_users_update = connection.cursor()
-                        update_user_name_query = "UPDATE users SET full_name = %s WHERE student_id = %s"
-                        cursor_users_update.execute(update_user_name_query, (aluno_data['nome'], aluno_id))
-                        connection.commit()
-                        cursor_users_update.close()
-
-                    return jsonify({'success': True, 'message': 'Aluno atualizado com sucesso!'}), 200
-                else:
-                    return jsonify({'success': False, 'message': 'Aluno não encontrado para atualização.'}), 404
-            except Error as e:
-                print(f"Erro ao atualizar aluno: {e}")
-                connection.rollback()
-                if e.errno == 1062:
-                    return jsonify({'success': False, 'message': f'Erro: Um registro com dados duplicados (email, CPF, RG ou telefone) já existe. Detalhes: {e.msg}'}), 409
-                return jsonify({'success': False, 'message': 'Erro interno do servidor'}), 500
-            finally:
-                connection.close()
-        return jsonify({'success': False, 'message': 'Erro de conexão com o banco de dados'}), 500
 
 # ====================================================================================================
 # ROTAS PARA USERS (LOGIN E ADMINISTRAÇÃO DE USUÁRIOS GERAIS)
 # ====================================================================================================
 @app.route('/users', methods=['GET'])
 def get_users():
+
+    from db_utils import create_db_connection
     connection = create_db_connection()
     users = []
     if connection:
         try:
             cursor = connection.cursor(dictionary=True)
-            cursor.execute("SELECT id, username, full_name, role, student_id, last_login, total_logins, online_status FROM users")
+            # ATUALIZAÇÃO AQUI: Adicionámos data_criacao à consulta
+            cursor.execute("SELECT id, username, full_name, role, student_id, last_login, total_logins, online_status, data_criacao FROM users")
             users = cursor.fetchall()
             for user in users:
                 if user.get('last_login'):
-                    user['last_login'] = user['last_login'].isoformat()
+                    user['last_login'] = user['last_login'].isoformat() # Formatar data para JSON
+                # ATUALIZAÇÃO AQUI: Adicionámos a formatação para a nova data
+                if user.get('data_criacao'):
+                    user['data_criacao'] = user['data_criacao'].isoformat()
             cursor.close()
         except Error as e:
             print(f"Erro ao buscar usuários: {e}")
@@ -399,6 +111,8 @@ def get_users():
 
 @app.route('/users/<int:user_id>', methods=['GET'])
 def get_user_by_id(user_id):
+
+    from db_utils import create_db_connection
     connection = create_db_connection()
     user = None
     if connection:
@@ -451,7 +165,7 @@ def add_user():
                 return jsonify({'success': False, 'message': 'Para o perfil de Aluno, o ID de Aluno deve ser um número válido.'}), 400
 
     hashed_password = generate_password_hash(password)
-
+    from db_utils import create_db_connection
     connection = create_db_connection()
     if connection:
         try:
@@ -482,7 +196,8 @@ def edit_user(user_id):
     user_data = request.get_json()
     
     username = user_data.get('username')
-    
+
+    from db_utils import create_db_connection
     connection = create_db_connection()
     if connection:
         try:
@@ -553,6 +268,8 @@ def edit_user(user_id):
 
 @app.route('/users/delete/<int:user_id>', methods=['DELETE'])
 def delete_user(user_id):
+
+    from db_utils import create_db_connection
     connection = create_db_connection()
     if connection:
         try:
@@ -581,7 +298,8 @@ def login():
 
     if not username or not password:
         return jsonify({'success': False, 'message': 'Nome de usuário e senha são obrigatórios.'}), 400
-
+    
+    from db_utils import create_db_connection
     connection = create_db_connection()
     if connection:
         try:
@@ -620,6 +338,7 @@ def login():
 
 @app.route('/logout/<int:user_id>', methods=['POST'])
 def logout(user_id):
+    from db_utils import create_db_connection
     connection = create_db_connection()
     if connection:
         try:
@@ -642,6 +361,7 @@ def logout(user_id):
 # ====================================================================================================
 @app.route('/classes', methods=['GET'])
 def get_classes():
+    from db_utils import create_db_connection
     connection = create_db_connection()
     classes = []
     if connection:
@@ -661,6 +381,7 @@ def get_classes():
 
 @app.route('/classes/<int:class_id>', methods=['GET'])
 def get_class_by_id(class_id):
+    from db_utils import create_db_connection
     connection = create_db_connection()
     class_item = None
     if connection:
@@ -694,7 +415,7 @@ def add_class():
 
     if not title or not date:
         return jsonify({'success': False, 'message': 'Título e Data são obrigatórios.'}), 400
-
+    from db_utils import create_db_connection
     connection = create_db_connection()
     if connection:
         try:
@@ -716,7 +437,7 @@ def add_class():
 @app.route('/classes/edit/<int:class_id>', methods=['PUT'])
 def edit_class(class_id):
     class_data = request.get_json()
-    
+    from db_utils import create_db_connection
     connection = create_db_connection()
     if connection:
         try:
@@ -760,6 +481,7 @@ def edit_class(class_id):
 
 @app.route('/classes/delete/<int:class_id>', methods=['DELETE'])
 def delete_class(class_id):
+    from db_utils import create_db_connection
     connection = create_db_connection()
     if connection:
         try:
@@ -785,6 +507,7 @@ def delete_class(class_id):
 # ====================================================================================================
 @app.route('/attendance', methods=['GET'])
 def get_attendance_records():
+    from db_utils import create_db_connection
     connection = create_db_connection()
     records = []
     if connection:
@@ -811,6 +534,8 @@ def get_attendance_records():
 
 @app.route('/attendance/student/<int:student_id>', methods=['GET'])
 def get_attendance_by_student(student_id):
+
+    from db_utils import create_db_connection
     connection = create_db_connection()
     records = []
     if connection:
@@ -847,7 +572,8 @@ def add_attendance_record():
 
     if not student_id or not class_id or not attendance_status:
         return jsonify({'success': False, 'message': 'Student ID, Class ID e Status de Frequência são obrigatórios.'}), 400
-
+    
+    from db_utils import create_db_connection
     connection = create_db_connection()
     if connection:
         try:
@@ -901,6 +627,7 @@ def edit_attendance_record(record_id):
     if not attendance_status:
         return jsonify({'success': False, 'message': 'Status de Frequência é obrigatório.'}), 400
     
+    from db_utils import create_db_connection
     connection = create_db_connection()
     if connection:
         try:
@@ -946,6 +673,7 @@ def edit_attendance_record(record_id):
 
 @app.route('/attendance/delete/<int:record_id>', methods=['DELETE'])
 def delete_attendance_record(record_id):
+    from db_utils import create_db_connection
     connection = create_db_connection()
     if connection:
         try:
@@ -997,6 +725,7 @@ def delete_attendance_record(record_id):
 # ====================================================================================================
 @app.route('/status_alunos', methods=['GET'])
 def get_status_alunos():
+    from db_utils import create_db_connection
     connection = create_db_connection()
     statuses = []
     if connection:
@@ -1021,6 +750,7 @@ def get_status_alunos():
 # ADIÇÃO: Rotas para Atividades dos Alunos
 @app.route('/atividades_alunos', methods=['GET'])
 def get_atividades_alunos():
+    from db_utils import create_db_connection
     connection = create_db_connection()
     activities = []
     if connection:
@@ -1053,7 +783,8 @@ def update_aula_status(aluno_id):
     
     if aula_col not in [f'aula_{i}' for i in range(1, 11)]:
         return jsonify({'success': False, 'message': 'Coluna de aula inválida.'}), 400
-
+    
+    from db_utils import create_db_connection
     connection = create_db_connection()
     if connection:
         try:
@@ -1088,6 +819,7 @@ def update_aula_status(aluno_id):
 # ====================================================================================================
 @app.route('/materials', methods=['GET'])
 def get_materials():
+    from db_utils import create_db_connection
     connection = create_db_connection()
     materials = []
     if connection:
@@ -1122,6 +854,7 @@ def upload_material():
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
 
+        from db_utils import create_db_connection
         connection = create_db_connection()
         if connection:
             try:
@@ -1153,7 +886,7 @@ def download_material(filename):
 @app.route('/materials/edit/<int:material_id>', methods=['PUT'])
 def edit_material(material_id):
     material_data = request.get_json()
-    
+    from db_utils import create_db_connection
     connection = create_db_connection()
     if connection:
         try:
@@ -1191,6 +924,7 @@ def edit_material(material_id):
 
 @app.route('/materials/delete/<int:material_id>', methods=['DELETE'])
 def delete_material(material_id):
+    from db_utils import create_db_connection
     connection = create_db_connection()
     if connection:
         try:
@@ -1226,6 +960,7 @@ def delete_material(material_id):
 # ====================================================================================================
 @app.route('/avisos', methods=['GET'])
 def get_avisos():
+    from db_utils import create_db_connection
     connection = create_db_connection()
     avisos = []
     if connection:
@@ -1258,7 +993,7 @@ def add_aviso():
 
     if not titulo or not mensagem or not user_id:
         return jsonify({'success': False, 'message': 'Título, mensagem e ID do usuário são obrigatórios.'}), 400
-
+    from db_utils import create_db_connection
     connection = create_db_connection()
     if connection:
         try:
@@ -1279,6 +1014,7 @@ def add_aviso():
 
 @app.route('/avisos/delete/<int:aviso_id>', methods=['DELETE'])
 def delete_aviso(aviso_id):
+    from db_utils import create_db_connection
     connection = create_db_connection()
     if connection:
         try:

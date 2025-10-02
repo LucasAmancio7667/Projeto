@@ -27,17 +27,17 @@ CREATE TABLE IF NOT EXISTS alunos (
 
 
 -- 2. Cria a tabela 'users'
--- A coluna 'role' já é definida corretamente como ENUM('student', 'teacher')
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     full_name VARCHAR(255),
-    role ENUM('student', 'teacher') NOT NULL, -- Removido 'admin' para simplificar
+    role ENUM('student', 'teacher') NOT NULL,
     student_id INT UNIQUE,
     last_login DATETIME,
     total_logins INT DEFAULT 0,
     online_status VARCHAR(20) DEFAULT 'Offline',
+    data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP, 
     FOREIGN KEY (student_id) REFERENCES alunos(id) ON DELETE SET NULL
 );
 
@@ -89,11 +89,24 @@ CREATE TABLE IF NOT EXISTS avisos (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
+-- 5.2. Cria a tabela 'forum_posts'
+CREATE TABLE IF NOT EXISTS forum_posts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    class_id INT NOT NULL,
+    user_id INT NOT NULL,
+    mensagem TEXT NOT NULL,
+    data_postagem DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- 6. Cria a tabela 'status_alunos' (para status por aluno)
 CREATE TABLE IF NOT EXISTS status_alunos (
     id INT PRIMARY KEY, -- Chave Primária e Estrangeira
     faltas SMALLINT DEFAULT 0,
     situacao ENUM('Ativo', 'Desistente') DEFAULT 'Ativo',
+    -- LINHA ADICIONADA AQUI
+    status_matricula ENUM('Ativo', 'Trancado', 'Concluído') DEFAULT 'Ativo' NOT NULL,
     FOREIGN KEY (id) REFERENCES alunos(id) ON DELETE CASCADE
 );
 

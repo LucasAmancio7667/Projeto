@@ -26,7 +26,7 @@
     <div class="main-layout">
         <header class="header">
             <div class="logo">
-                <img src=img/scratch.png height=50px width=50px alt="Scratch Logo" id="scratch-logo">
+                <img src="img/scratch.png" height="50px" width="50px" alt="Scratch Logo" id="scratch-logo">
             </div>
             <nav>
                 <ul class="nav-menu">
@@ -61,7 +61,7 @@
                 </ul>
             </nav>
             <div class="user-profile">
-                <div class="user-avatar"><img src=img/icon-user.png height=40px width=40px alt="Icone do Perfil"></div>
+                <div class="user-avatar"><img src="img/icon-user.png" height="40px" width="40px" alt="Icone do Perfil"></div>
             </div>
         </header>
         
@@ -198,65 +198,39 @@
     
     <script src="script.js"></script>
     <script>
-        let allFetchedClasses = []; // Armazena todas as aulas buscadas do backend
-        let selectedClassId = null; // ID da aula atualmente selecionada para edição/remoção
+        let allFetchedClasses = [];
+        let selectedClassId = null;
 
         document.addEventListener('DOMContentLoaded', async () => {
             await loadSchedule();
-            // Lógica para mostrar/esconder controles do professor (já existente no seu script.js)
             const userRole = localStorage.getItem('userRole');
             if (userRole === 'teacher') {
                 document.getElementById('teacherControls').style.display = 'block';
-            } else {
-                // Para alunos, remover a funcionalidade de seleção de aula
-                document.querySelectorAll('.class-item').forEach(item => {
-                    item.style.cursor = 'default';
-                    item.onclick = null; // Remove o evento de clique para alunos
-                });
             }
-
-            // Fechar modal ao clicar fora
-            document.getElementById('editModal').addEventListener('click', (e) => {
-                if (e.target.id === 'editModal') {
-                    fecharModal();
-                }
-            });
-            document.getElementById('deleteConfirmModal').addEventListener('click', (e) => {
-                if (e.target.id === 'deleteConfirmModal') {
-                    fecharDeleteConfirmModal();
-                }
-            });
         });
 
-        // Função para carregar o cronograma de aulas do backend
         async function loadSchedule() {
             const scheduleContainer = document.getElementById('classSchedule');
-            scheduleContainer.innerHTML = ''; // Limpa o conteúdo existente
+            scheduleContainer.innerHTML = '';
             try {
                 const response = await fetch('http://127.0.0.1:5000/classes');
                 if (!response.ok) {
                     throw new Error(`Erro HTTP! Status: ${response.status}`);
                 }
-                allFetchedClasses = await response.json(); // Armazena as aulas para uso posterior
+                allFetchedClasses = await response.json();
                 
                 if (allFetchedClasses.length === 0) {
-                    scheduleContainer.innerHTML = '<p style="text-align: center; color: #666;">Nenhuma aula cadastrada. Adicione uma nova aula!</p>';
+                    scheduleContainer.innerHTML = '<p style="text-align: center; color: #666;">Nenhuma aula cadastrada.</p>';
                     return;
                 }
 
                 allFetchedClasses.forEach(classItem => {
                     const classDiv = document.createElement('div');
                     classDiv.className = `class-item ${classItem.status}`;
-                    classDiv.dataset.id = classItem.id; // Armazena o ID no dataset para fácil acesso
+                    classDiv.dataset.id = classItem.id;
 
-                    // Adiciona o evento de clique APENAS para professores/admins
-                    const userRole = localStorage.getItem('userRole');
-                    if (userRole === 'teacher') {
-                        classDiv.onclick = () => selectClass(classItem.id);
-                        classDiv.style.cursor = 'pointer';
-                    } else {
-                        classDiv.style.cursor = 'default'; // Para alunos, não clicável
-                    }
+                    classDiv.onclick = () => selectClass(classItem.id);
+                    classDiv.style.cursor = 'pointer';
                     
                     const dateObj = new Date(classItem.date + 'T19:00:00');
                     const formattedDate = dateObj.toLocaleDateString('pt-BR', {
@@ -274,39 +248,115 @@
                         <div class="class-date">📅 ${formattedDate}</div>
                         <div class="class-time">🕐 19:00 às 22:00</div>
                         <div class="class-description">${classItem.description || 'Sem descrição.'}</div>
+                        
+                        <div class="forum-section hidden">
+                            <h5>Discussão da Aula</h5>
+                            <div class="forum-posts" id="forum-posts-${classItem.id}"></div>
+                            <div class="forum-add-post">
+                                <textarea id="forum-textarea-${classItem.id}" placeholder="Escreva a sua dúvida ou comentário..." onclick="event.stopPropagation()"></textarea>
+                                <button class="action-btn small" onclick="postForumMessage(${classItem.id}, event)">Enviar</button>
+                            </div>
+                        </div>
                     `;
                     
                     scheduleContainer.appendChild(classDiv);
                 });
             } catch (error) {
-                console.error('Erro ao buscar aulas do backend:', error);
-                scheduleContainer.innerHTML = '<p style="text-align: center; color: red;">Erro ao carregar o cronograma de aulas.</p>';
-                showMessageModal('Erro', 'Não foi possível carregar o cronograma de aulas.');
+                console.error('Erro ao buscar aulas:', error);
+                scheduleContainer.innerHTML = '<p style="text-align: center; color: red;">Erro ao carregar o cronograma.</p>';
             }
         }
         
         function getStatusText(status) {
-            const statusMap = {
-                'completed': 'Realizada',
-                'current': 'Próxima',
-                'future': 'Futura',
-                'cancelled': 'Cancelada'
-            };
+            const statusMap = { 'completed': 'Realizada', 'current': 'Próxima', 'future': 'Futura', 'cancelled': 'Cancelada' };
             return statusMap[status] || status;
         }
         
         function selectClass(classId) {
-            document.querySelectorAll('.class-item').forEach(item => {
-                item.classList.remove('selected');
-            });
+            const previouslySelected = document.querySelector('.class-item.selected');
+            const newlySelected = document.querySelector(`.class-item[data-id="${classId}"]`);
+
+            if (previouslySelected && previouslySelected.dataset.id == classId) {
+                previouslySelected.querySelector('.forum-section').classList.add('hidden');
+                previouslySelected.classList.remove('selected');
+                selectedClassId = null;
+                return;
+            }
+
+            document.querySelectorAll('.forum-section').forEach(forum => forum.classList.add('hidden'));
+            document.querySelectorAll('.class-item').forEach(item => item.classList.remove('selected'));
             
-            const selectedDiv = document.querySelector(`.class-item[data-id="${classId}"]`);
-            if (selectedDiv) {
-                selectedDiv.classList.add('selected');
+            if (newlySelected) {
+                newlySelected.classList.add('selected');
+                const forumSection = newlySelected.querySelector('.forum-section');
+                if(forumSection){
+                    forumSection.classList.remove('hidden');
+                    loadForumPosts(classId);
+                }
             }
             selectedClassId = classId;
         }
+
+        async function loadForumPosts(classId) {
+            const postsContainer = document.getElementById(`forum-posts-${classId}`);
+            if (!postsContainer) return;
+
+            postsContainer.innerHTML = '<p>A carregar mensagens...</p>';
+            try {
+                const response = await fetch(`http://127.0.0.1:5000/forum/posts/${classId}`);
+                const posts = await response.json();
+
+                postsContainer.innerHTML = '';
+                if (posts.length === 0) {
+                    postsContainer.innerHTML = '<p style="font-size: 0.9rem; color: #888;">Nenhuma mensagem nesta discussão ainda.</p>';
+                    return;
+                }
+
+                posts.forEach(post => {
+                    const postElement = document.createElement('div');
+                    postElement.className = 'forum-post';
+                    const dataPostagem = new Date(post.data_postagem).toLocaleString('pt-BR');
+                    postElement.innerHTML = `
+                        <p class="post-message">
+                            <strong class="post-author">${post.autor || 'Utilizador'}</strong>
+                            <span class="post-meta">em ${dataPostagem}</span><br>
+                            ${post.mensagem}
+                        </p>`;
+                    postsContainer.appendChild(postElement);
+                });
+            } catch (error) {
+                postsContainer.innerHTML = '<p style="color: red;">Erro ao carregar mensagens.</p>';
+            }
+        }
+
+        async function postForumMessage(classId, event) {
+            event.stopPropagation();
+            const textarea = document.getElementById(`forum-textarea-${classId}`);
+            const mensagem = textarea.value.trim();
+            const userId = localStorage.getItem('userId');
+
+            if (!mensagem) {
+                showMessageModal('Atenção', 'A mensagem não pode estar vazia.', 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/forum/posts/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ class_id: classId, user_id: userId, mensagem: mensagem })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    textarea.value = '';
+                    await loadForumPosts(classId);
+                } else { throw new Error(data.message); }
+            } catch (error) {
+                showMessageModal('Erro', 'Não foi possível enviar a sua mensagem.', 'error');
+            }
+        }
         
+        // Funções de Modal para o Professor (sem alterações)
         function adicionarAula() {
             selectedClassId = null;
             document.getElementById('modalTitle').textContent = '➕ Adicionar Nova Aula';
@@ -315,69 +365,40 @@
         }
         
         async function editarAula() {
-            if (!selectedClassId) {
-                showMessageModal('Atenção', 'Selecione uma aula para editar.');
-                return;
-            }
-            
-            try {
-                const response = await fetch(`http://127.0.0.1:5000/classes/${selectedClassId}`);
-                if (!response.ok) throw new Error(`Erro HTTP! Status: ${response.status}`);
+            if (!selectedClassId) { showMessageModal('Atenção', 'Selecione uma aula para editar.'); return; }
+            const response = await fetch(`http://127.0.0.1:5000/classes/${selectedClassId}`);
+            if (response.ok) {
                 const classItem = await response.json();
-
-                if (classItem) {
-                    document.getElementById('modalTitle').textContent = '✏️ Editar Aula';
-                    document.getElementById('classId').value = classItem.id;
-                    document.getElementById('classTitle').value = classItem.title;
-                    document.getElementById('classDate').value = classItem.date;
-                    document.getElementById('classStatus').value = classItem.status;
-                    document.getElementById('classDescription').value = classItem.description || '';
-                    document.getElementById('editModal').classList.remove('hidden');
-                } else {
-                    showMessageModal('Erro', 'Aula não encontrada para edição.');
-                }
-            } catch (error) {
-                console.error('Erro ao buscar dados da aula para edição:', error);
-                showMessageModal('Erro', 'Não foi possível carregar os dados da aula para edição.');
-            }
+                document.getElementById('modalTitle').textContent = '✏️ Editar Aula';
+                document.getElementById('classId').value = classItem.id;
+                document.getElementById('classTitle').value = classItem.title;
+                document.getElementById('classDate').value = classItem.date;
+                document.getElementById('classStatus').value = classItem.status;
+                document.getElementById('classDescription').value = classItem.description || '';
+                document.getElementById('editModal').classList.remove('hidden');
+            } else { showMessageModal('Erro', 'Aula não encontrada.'); }
         }
         
         function removerAula() {
-            if (!selectedClassId) {
-                showMessageModal('Atenção', 'Selecione uma aula para remover.');
-                return;
-            }
+            if (!selectedClassId) { showMessageModal('Atenção', 'Selecione uma aula para remover.'); return; }
             const classItem = allFetchedClasses.find(c => c.id === selectedClassId);
             if (classItem) {
                 document.getElementById('deleteClassTitleConfirm').textContent = classItem.title;
                 document.getElementById('deleteConfirmModal').classList.remove('hidden');
-            } else {
-                showMessageModal('Erro', 'Aula não encontrada para remoção.');
             }
         }
 
         async function confirmarRemocaoAula() {
-            if (!selectedClassId) {
-                showMessageModal('Erro', 'Nenhuma aula selecionada para remoção.');
-                return;
-            }
             try {
-                const response = await fetch(`http://127.0.0.1:5000/classes/delete/${selectedClassId}`, {
-                    method: 'DELETE',
-                });
+                const response = await fetch(`http://127.0.0.1:5000/classes/delete/${selectedClassId}`, { method: 'DELETE' });
                 const data = await response.json();
                 if (data.success) {
                     showMessageModal('Sucesso', 'Aula removida com sucesso!');
                     fecharDeleteConfirmModal();
                     await loadSchedule();
                     selectedClassId = null;
-                } else {
-                    showMessageModal('Erro', 'Erro ao remover aula: ' + (data.message || 'Erro desconhecido.'));
-                }
-            } catch (error) {
-                console.error('Erro de rede ou servidor ao remover aula:', error);
-                showMessageModal('Erro', 'Erro de conexão ou servidor ao remover aula.');
-            }
+                } else { throw new Error(data.message); }
+            } catch (error) { showMessageModal('Erro', 'Erro ao remover aula: ' + error.message); }
         }
         
         async function salvarAula() {
@@ -385,50 +406,29 @@
             const date = document.getElementById('classDate').value;
             const status = document.getElementById('classStatus').value;
             const description = document.getElementById('classDescription').value;
-            
-            if (!title || !date) {
-                showMessageModal('Atenção', 'Título e Data são obrigatórios.');
-                return;
-            }
-
+            if (!title || !date) { showMessageModal('Atenção', 'Título e Data são obrigatórios.'); return; }
             const classData = { title, date, status, description };
             let url = 'http://127.0.0.1:5000/classes/add';
             let method = 'POST';
-
             if (selectedClassId) {
                 url = `http://127.0.0.1:5000/classes/edit/${selectedClassId}`;
                 method = 'PUT';
             }
-
             try {
-                const response = await fetch(url, {
-                    method: method,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(classData),
-                });
+                const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(classData) });
                 const data = await response.json();
-
                 if (data.success) {
                     showMessageModal('Sucesso', `Aula ${selectedClassId ? 'atualizada' : 'adicionada'} com sucesso!`);
                     fecharModal();
                     await loadSchedule();
-                    selectedClassId = null;
-                } else {
-                    showMessageModal('Erro', `Erro ao ${selectedClassId ? 'atualizar' : 'adicionar'} aula: ` + (data.message || 'Erro desconhecido.'));
-                }
-            } catch (error) {
-                console.error('Erro de rede ou servidor ao salvar aula:', error);
-                showMessageModal('Erro', 'Erro de conexão ou servidor ao salvar aula.');
-            }
+                } else { throw new Error(data.message); }
+            } catch (error) { showMessageModal('Erro', `Erro ao salvar aula: ` + error.message); }
         }
         
         function fecharModal() {
             document.getElementById('editModal').classList.add('hidden');
             document.getElementById('classForm').reset();
             selectedClassId = null;
-            document.querySelectorAll('.class-item.selected').forEach(item => {
-                item.classList.remove('selected');
-            });
         }
 
         function fecharDeleteConfirmModal() {
@@ -437,99 +437,29 @@
     </script>
     
     <style>
-        .calendar-container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-        .info-card {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-        .schedule-info {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-        }
-        .schedule-info h2 {
-            color: #4a90e2;
-            margin-bottom: 15px;
-        }
-        .fixed-schedule {
-            display: flex;
-            gap: 30px;
-            flex-wrap: wrap;
-        }
-        .time-info, .duration-info {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        .time-label, .duration-label {
-            font-weight: bold;
-            color: #666;
-        }
-        .time-value, .duration-value {
-            font-size: 1.2rem;
-            color: #4a90e2;
-            font-weight: bold;
-        }
-        .teacher-controls {
-            background: #fff3cd;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            border: 1px solid #ffeaa7;
-        }
-        .teacher-controls h3 {
-            color: #856404;
-            margin-bottom: 15px;
-        }
-        .control-buttons {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .class-schedule {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        .class-item {
-            border: 2px solid #f0f0f0;
-            border-radius: 12px;
-            padding: 20px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .class-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-        .class-item.selected {
-            border-color: #4a90e2;
-            background: #f0f8ff;
-        }
+        /* ... estilos existentes ... */
+        .calendar-container { max-width: 1000px; margin: 0 auto; }
+        .info-card { background: white; border-radius: 15px; padding: 30px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
+        .schedule-info { background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 30px; }
+        .schedule-info h2 { color: #4a90e2; margin-bottom: 15px; }
+        .fixed-schedule { display: flex; gap: 30px; flex-wrap: wrap; }
+        .time-info, .duration-info { display: flex; flex-direction: column; gap: 5px; }
+        .time-label, .duration-label { font-weight: bold; color: #666; }
+        .time-value, .duration-value { font-size: 1.2rem; color: #4a90e2; font-weight: bold; }
+        .teacher-controls { background: #fff3cd; padding: 20px; border-radius: 10px; margin-bottom: 30px; border: 1px solid #ffeaa7; }
+        .teacher-controls h3 { color: #856404; margin-bottom: 15px; }
+        .control-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+        .class-schedule { display: flex; flex-direction: column; gap: 15px; }
+        .class-item { border: 2px solid #f0f0f0; border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.3s; }
+        .class-item:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
+        .class-item.selected { border-color: #4a90e2; background: #f0f8ff; }
         .class-item.completed { border-left: 5px solid #28a745; }
         .class-item.current { border-left: 5px solid #ffc107; background: #fff8e1; }
         .class-item.future { border-left: 5px solid #6c757d; }
         .class-item.cancelled { border-left: 5px solid #dc3545; opacity: 0.7; }
-        .class-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
+        .class-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .class-header h4 { margin: 0; color: #333; }
-        .class-status {
-            background: #e9ecef;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: bold;
-        }
+        .class-status { background: #e9ecef; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
         .class-date, .class-time { color: #666; margin-bottom: 5px; }
         .class-description { color: #555; font-style: italic; }
         .legend { margin-top: 30px; padding-top: 20px; border-top: 2px solid #f0f0f0; }
@@ -544,6 +474,17 @@
         .action-btn.danger { background: #dc3545; }
         .action-btn.danger:hover { background: #c82333; }
         
+        .forum-section { margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; }
+        .forum-section h5 { color: #4a90e2; margin-bottom: 10px; }
+        .forum-posts { display: flex; flex-direction: column; gap: 12px; max-height: 300px; overflow-y: auto; padding: 10px; background-color: #f8f9fa; border-radius: 8px; margin-bottom: 15px; }
+        .forum-post { padding: 10px; background-color: #fff; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .post-author { font-weight: bold; color: #333; font-size: 0.9rem; }
+        .post-meta { font-size: 0.75rem; color: #888; margin-left: 8px; }
+        .post-message { margin-top: 5px; font-size: 0.95rem; color: #555; }
+        .forum-add-post { display: flex; flex-direction: column; gap: 10px; }
+        .forum-add-post textarea { width: 100%; min-height: 60px; padding: 8px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: inherit; font-size: 0.9rem; }
+        .forum-add-post .action-btn { align-self: flex-end; }
+
         @media (max-width: 768px) {
             .fixed-schedule { flex-direction: column; gap: 15px; }
             .control-buttons { flex-direction: column; }
