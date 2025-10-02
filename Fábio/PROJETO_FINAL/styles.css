@@ -1297,3 +1297,66 @@ body {
 .database-controls .action-btn {
     padding: 12px 15px; /* 12px (cima/baixo) e 15px (lados) */
 }
+
+/* Estilos para o Mural de Avisos no Dashboard do Professor */
+.add-aviso-form {
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    margin-bottom: 30px;
+}
+
+.add-aviso-form h3 {
+    color: #4a90e2;
+    margin-bottom: 15px;
+}
+
+.add-aviso-form .form-group input,
+.add-aviso-form .form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+/* Estilização específica para os itens da lista de avisos */
+.aviso-item {
+    display: flex;
+    gap: 15px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border-left: 5px solid #4a90e2;
+    align-items: flex-start;
+}
+
+.aviso-content {
+    flex: 1;
+}
+
+.aviso-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.aviso-header h4 {
+    margin: 0;
+    color: #333;
+}
+
+.aviso-meta {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.aviso-corpo {
+    margin: 10px 0;
+}
+
+.aviso-actions .action-btn {
+    padding: 5px 10px;
+    font-size: 0.8rem;
+}

@@ -153,6 +153,158 @@ document.addEventListener("DOMContentLoaded", () => {
             sendEditedAlunoToBackend(alunoId, alunoData);
         });
     }
+
+    // =====================================================================================
+    // LÓGICA PARA O MURAL DE AVISOS (TEACHER DASHBOARD)
+    // =====================================================================================
+
+    if (window.location.pathname.endsWith('teacher-dashboard.html')) {
+        
+        const addAvisoForm = document.getElementById('addAvisoForm');
+        const avisosList = document.getElementById('avisosList');
+
+        async function loadAvisos() {
+            if (!avisosList) return;
+            avisosList.innerHTML = '<p>A carregar avisos...</p>';
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/avisos');
+                const avisos = await response.json();
+
+                avisosList.innerHTML = '';
+                if (avisos.length === 0) {
+                    avisosList.innerHTML = '<p>Nenhum aviso publicado ainda.</p>';
+                    return;
+                }
+
+                avisos.forEach(aviso => {
+                    const dataAviso = new Date(aviso.data_criacao).toLocaleString('pt-BR');
+                    const avisoItem = document.createElement('div');
+                    avisoItem.className = 'aviso-item';
+                    avisoItem.innerHTML = `
+                        <div class="aviso-content">
+                            <div class="aviso-header">
+                                <h4>${aviso.titulo}</h4>
+                                <div class="aviso-actions">
+                                    <button class="action-btn small danger" onclick="deleteAviso(${aviso.id})">Apagar</button>
+                                </div>
+                            </div>
+                            <p class="aviso-corpo">${aviso.mensagem}</p>
+                            <div class="aviso-meta">
+                                <span>Publicado por: <strong>${aviso.autor || 'Professor'}</strong> em ${dataAviso}</span>
+                            </div>
+                        </div>
+                    `;
+                    avisosList.appendChild(avisoItem);
+                });
+            } catch (error) {
+                console.error('Erro ao carregar avisos:', error);
+                avisosList.innerHTML = '<p style="color: red;">Não foi possível carregar os avisos.</p>';
+            }
+        }
+
+        window.deleteAviso = async function(avisoId) {
+            showConfirmModal('Confirmar Exclusão', 'Tem a certeza de que deseja apagar este aviso?', async () => {
+                try {
+                    const response = await fetch(`http://127.0.0.1:5000/avisos/delete/${avisoId}`, {
+                        method: 'DELETE'
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        showMessageModal('Sucesso!', 'Aviso apagado com sucesso.', 'success');
+                        loadAvisos();
+                    } else {
+                        throw new Error(data.message);
+                    }
+                } catch (error) {
+                    console.error('Erro ao apagar aviso:', error);
+                    showMessageModal('Erro!', 'Não foi possível apagar o aviso.', 'error');
+                }
+            });
+        }
+
+        if (addAvisoForm) {
+            addAvisoForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const titulo = document.getElementById('avisoTitulo').value;
+                const mensagem = document.getElementById('avisoMensagem').value;
+                const userId = localStorage.getItem('userId');
+
+                if (!titulo || !mensagem) {
+                    showMessageModal('Atenção', 'Título e mensagem são obrigatórios.', 'warning');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('http://127.0.0.1:5000/avisos/add', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ titulo, mensagem, user_id: userId })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        showMessageModal('Sucesso!', 'Aviso publicado com sucesso!', 'success');
+                        addAvisoForm.reset();
+                        loadAvisos();
+                    } else {
+                        throw new Error(data.message);
+                    }
+                } catch (error) {
+                    console.error('Erro ao adicionar aviso:', error);
+                    showMessageModal('Erro!', 'Não foi possível publicar o aviso.', 'error');
+                }
+            });
+        }
+
+        loadAvisos();
+    }
+
+    // =====================================================================================
+    // LÓGICA PARA O MURAL DE AVISOS (STUDENT DASHBOARD)
+    // =====================================================================================
+
+    if (window.location.pathname.endsWith('dashboard.html')) {
+        const studentAvisosList = document.getElementById('studentAvisosList');
+
+        async function loadStudentAvisos() {
+            if (!studentAvisosList) return;
+            studentAvisosList.innerHTML = '<p>A carregar avisos...</p>';
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/avisos');
+                const avisos = await response.json();
+
+                studentAvisosList.innerHTML = '';
+                if (avisos.length === 0) {
+                    studentAvisosList.innerHTML = '<p>Nenhum aviso publicado pelo professor.</p>';
+                    return;
+                }
+
+                avisos.forEach(aviso => {
+                    const dataAviso = new Date(aviso.data_criacao).toLocaleString('pt-BR');
+                    const avisoItem = document.createElement('div');
+                    avisoItem.className = 'aviso-item';
+                    avisoItem.innerHTML = `
+                        <div class="aviso-content">
+                            <div class="aviso-header">
+                                <h4>${aviso.titulo}</h4>
+                            </div>
+                            <p class="aviso-corpo">${aviso.mensagem}</p>
+                            <div class="aviso-meta">
+                                <span>Publicado por: <strong>${aviso.autor || 'Professor'}</strong> em ${dataAviso}</span>
+                            </div>
+                        </div>
+                    `;
+                    studentAvisosList.appendChild(avisoItem);
+                });
+            } catch (error) {
+                console.error('Erro ao carregar avisos:', error);
+                studentAvisosList.innerHTML = '<p style="color: red;">Não foi possível carregar os avisos.</p>';
+            }
+        }
+        
+        loadStudentAvisos();
+    }
 });
 
 // =====================================================================================
@@ -170,7 +322,6 @@ const rowsPerPage = 20;
 window.fetchAlunosFromBackend = async function(page = 1, searchTerm = "") {
     currentPage = page;
     try {
-        // A URL agora inclui o parâmetro de pesquisa, se houver
         const response = await fetch(`http://127.0.0.1:5000/alunos?page=${page}&limit=${rowsPerPage}&search=${searchTerm}`);
         if (!response.ok) throw new Error(`Erro HTTP! Status: ${response.status}`);
         
@@ -179,7 +330,7 @@ window.fetchAlunosFromBackend = async function(page = 1, searchTerm = "") {
         const totalAlunos = data.total;
 
         displayAlunosInInfoTable(alunos); 
-        setupPagination(totalAlunos, page, searchTerm); // Passa o termo de pesquisa para a paginação
+        setupPagination(totalAlunos, page, searchTerm);
 
     } catch (error) {
         console.error('Erro ao buscar alunos:', error);
@@ -385,7 +536,6 @@ window.fetchStudentOverallStatusFromBackend = async function() {
 
         statuses.forEach(status => {
             const row = document.createElement('tr');
-            // A sua tabela original tinha 5 colunas, adicionei placeholders para as últimas duas
             row.innerHTML = `
                 <td>${status.student_name || ''}</td>
                 <td>${status.faltas !== null ? status.faltas : ''}</td>
@@ -412,10 +562,9 @@ window.fetchLoginAlunosFromBackend = async function() {
         
         const users = await response.json();
         
-        // Filtra para mostrar apenas os alunos
         const studentUsers = users.filter(user => user.role === 'student');
 
-        tbody.innerHTML = ''; // Limpa a mensagem "A carregar"
+        tbody.innerHTML = '';
 
         if (studentUsers.length === 0) {
             tbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">Nenhum utilizador de aluno encontrado.</td></tr>`;
@@ -424,7 +573,6 @@ window.fetchLoginAlunosFromBackend = async function() {
 
         studentUsers.forEach(user => {
             const row = document.createElement('tr');
-            // Formata a data do último login para ser mais legível
             const lastLogin = user.last_login ? new Date(user.last_login).toLocaleString('pt-BR') : 'Nunca';
             
             row.innerHTML = `

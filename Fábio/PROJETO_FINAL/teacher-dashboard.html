@@ -101,6 +101,26 @@
                     </a>
                 </div>
             </div>
+
+            <div class="recent-activity">
+                <h2>Mural de Avisos</h2>
+                
+                <div class="add-aviso-form">
+                    <h3>Adicionar Novo Aviso</h3>
+                    <form id="addAvisoForm">
+                        <div class="form-group">
+                            <input type="text" id="avisoTitulo" placeholder="Título do Aviso" required>
+                        </div>
+                        <div class="form-group">
+                            <textarea id="avisoMensagem" rows="3" placeholder="Digite sua mensagem aqui..." required></textarea>
+                        </div>
+                        <button type="submit" class="action-btn primary">Publicar Aviso</button>
+                    </form>
+                </div>
+
+                <div class="activity-list" id="avisosList">
+                    </div>
+            </div>
             
         </main>
     </div>
