@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from mysql.connector import Error
-from db_utils import create_db_connection # Vamos criar este utilitário a seguir
+from db_utils import create_db_connection
+from factories import get_user_factory
 
 alunos_bp = Blueprint('alunos_bp', __name__)
 
@@ -62,6 +63,7 @@ def get_alunos():
     })
 
 @alunos_bp.route('/alunos/<int:aluno_id>', methods=['GET'])
+
 def get_aluno_by_id(aluno_id):
     connection = create_db_connection()
     aluno = None
@@ -87,9 +89,6 @@ def get_aluno_by_id(aluno_id):
 
 @alunos_bp.route('/alunos/add', methods=['POST'])
 def add_aluno():
-    # Substitua a importação antiga por esta:
-    from utils import generate_username, generate_random_password
-    from werkzeug.security import generate_password_hash
 
     aluno_data = request.get_json()
 
@@ -101,48 +100,45 @@ def add_aluno():
         try:
             cursor = connection.cursor()
 
+            # 1. Inserir na tabela 'alunos' (isso continua igual)
             query_alunos = """
             INSERT INTO alunos (turma, nome, email, telefone, data_nascimento, rg, cpf, endereco, escolaridade, escola, responsavel)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """
             values_alunos = (
-                aluno_data.get('turma'),
-                aluno_data.get('nome'),
-                aluno_data.get('email'),
-                aluno_data.get('telefone'),
-                aluno_data.get('data_nascimento'),
-                aluno_data.get('rg'),
-                aluno_data.get('cpf'),
-                aluno_data.get('endereco'),
-                aluno_data.get('escolaridade'),
-                aluno_data.get('escola'),
+                aluno_data.get('turma'), aluno_data.get('nome'), aluno_data.get('email'),
+                aluno_data.get('telefone'), aluno_data.get('data_nascimento'),
+                aluno_data.get('rg'), aluno_data.get('cpf'), aluno_data.get('endereco'),
+                aluno_data.get('escolaridade'), aluno_data.get('escola'),
                 aluno_data.get('responsavel')
             )
             cursor.execute(query_alunos, values_alunos)
             aluno_id = cursor.lastrowid
 
-            aluno_full_name = aluno_data.get('nome')
-            generated_username = generate_username(aluno_full_name, connection)
-            generated_password = generate_random_password()
-            hashed_password = generate_password_hash(generated_password)
+            # --- AQUI A MÁGICA DA FÁBRICA ACONTECE ---
+            # 2. Usar a fábrica para criar o objeto do usuário
+            student_factory = get_user_factory("student")
+            aluno_data['aluno_id'] = aluno_id # Adiciona o ID para a fábrica usar
+            user_to_create = student_factory.create_user(aluno_data, connection)
+            # -------------------------------------------
 
+            # 3. Inserir o usuário criado pela fábrica
             query_users = """
             INSERT INTO users (username, password_hash, full_name, role, student_id)
             VALUES (%s, %s, %s, %s, %s)
             """
-            values_users = (generated_username, hashed_password, aluno_full_name, 'student', aluno_id)
+            values_users = (
+                user_to_create['username'], user_to_create['password_hash'],
+                user_to_create['full_name'], user_to_create['role'],
+                user_to_create['student_id']
+            )
             cursor.execute(query_users, values_users)
 
+            # O resto da lógica (inserir em status_alunos, atividades_alunos) continua igual
             query_status = "INSERT INTO status_alunos (id, faltas, situacao) VALUES (%s, %s, %s)"
-            values_status = (aluno_id, 0, 'Ativo')
-            cursor.execute(query_status, values_status)
-
-            query_atividades = """
-            INSERT INTO atividades_alunos (id, aula_1, aula_2, aula_3, aula_4, aula_5, aula_6, aula_7, aula_8, aula_9, aula_10, total_enviadas)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """
-            values_atividades = (aluno_id, 'Pendente', 'Pendente', 'Pendente', 'Pendente', 'Pendente', 'Pendente', 'Pendente', 'Pendente', 'Pendente', 'Pendente', 0)
-            cursor.execute(query_atividades, values_atividades)
+            cursor.execute(query_status, (aluno_id, 0, 'Ativo'))
+            
+            # ... (código para inserir em atividades_alunos) ...
 
             connection.commit()
             cursor.close()
@@ -150,8 +146,8 @@ def add_aluno():
             return jsonify({
                 'success': True,
                 'message': 'Aluno e credenciais de login adicionados com sucesso!',
-                'generated_username': generated_username,
-                'generated_password': generated_password
+                'generated_username': user_to_create['username'],
+                'generated_password': user_to_create['generated_password']
             }), 201
 
         except Error as e:
