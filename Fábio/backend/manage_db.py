@@ -80,9 +80,7 @@ def setup_database():
     except Error as e:
         print(f"Erro ao conectar ao banco de dados '{DB_NAME}': {e}")
         return
-
-    # --- CORREÇÃO APLICADA AQUI ---
-    # Agora, o script procura o arquivo na mesma pasta em que ele está.
+    
     script_dir = os.path.dirname(os.path.abspath(__file__))
     sql_script_path = os.path.join(script_dir, 'banco-de-dados.txt')
     
@@ -94,3 +92,4 @@ def setup_database():
 if __name__ == '__main__':
     print("Iniciando a configuração do banco de dados...")
     setup_database()
+    

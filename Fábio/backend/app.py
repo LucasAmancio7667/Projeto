@@ -43,6 +43,11 @@ def serve_static_files(filename):
 def get_dashboard_stats():
     from db_utils import create_db_connection
     connection = create_db_connection()
+    
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     if connection:
         try:
             cursor = connection.cursor(dictionary=True)
@@ -77,7 +82,10 @@ def get_dashboard_stats():
             print(f"Erro ao buscar estatísticas: {e}")
             return jsonify({'success': False, 'message': 'Erro interno do servidor'}), 500
         finally:
-            connection.close()
+            if connection.is_connected():
+                connection.close()
+    
+    # Fallback se a conexão falhar após a verificação inicial
     return jsonify({'success': False, 'message': 'Erro de conexão com o banco de dados'}), 500
 
 
@@ -89,6 +97,11 @@ def get_users():
 
     from db_utils import create_db_connection
     connection = create_db_connection()
+    
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     users = []
     if connection:
         try:
@@ -106,7 +119,8 @@ def get_users():
         except Error as e:
             print(f"Erro ao buscar usuários: {e}")
         finally:
-            connection.close()
+            if connection.is_connected():
+                connection.close()
     return jsonify(users)
 
 @app.route('/users/<int:user_id>', methods=['GET'])
@@ -114,6 +128,11 @@ def get_user_by_id(user_id):
 
     from db_utils import create_db_connection
     connection = create_db_connection()
+    
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     user = None
     if connection:
         try:
@@ -132,7 +151,8 @@ def get_user_by_id(user_id):
             print(f"Erro ao buscar usuário por ID: {e}")
             return jsonify({'message': 'Erro interno do servidor'}), 500
         finally:
-            connection.close()
+            if connection.is_connected():
+                connection.close()
     return jsonify({'message': 'Erro de conexão com o banco de dados'}), 500
 
 @app.route('/users/add', methods=['POST'])
@@ -167,6 +187,11 @@ def add_user():
     hashed_password = generate_password_hash(password)
     from db_utils import create_db_connection
     connection = create_db_connection()
+    
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     if connection:
         try:
             cursor = connection.cursor()
@@ -199,6 +224,11 @@ def edit_user(user_id):
 
     from db_utils import create_db_connection
     connection = create_db_connection()
+    
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     if connection:
         try:
             cursor = connection.cursor()
@@ -262,7 +292,8 @@ def edit_user(user_id):
                 return jsonify({'success': False, 'message': msg}), 409
             return jsonify({'success': False, 'message': 'Erro interno do servidor'}), 500
         finally:
-            connection.close()
+            if connection.is_connected():
+                connection.close()
     return jsonify({'success': False, 'message': 'Erro de conexão com o banco de dados'}), 500
 
 
@@ -271,6 +302,11 @@ def delete_user(user_id):
 
     from db_utils import create_db_connection
     connection = create_db_connection()
+
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     if connection:
         try:
             cursor = connection.cursor()
@@ -287,7 +323,8 @@ def delete_user(user_id):
             connection.rollback()
             return jsonify({'success': False, 'message': 'Erro interno do servidor'}), 500
         finally:
-            connection.close()
+            if connection.is_connected():
+                connection.close()
     return jsonify({'success': False, 'message': 'Erro de conexão com o banco de dados'}), 500
 
 @app.route('/login', methods=['POST'])
@@ -301,6 +338,11 @@ def login():
     
     from db_utils import create_db_connection
     connection = create_db_connection()
+    
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     if connection:
         try:
             cursor = connection.cursor(dictionary=True)
@@ -333,13 +375,19 @@ def login():
             print(f"Erro no login: {e}")
             return jsonify({'success': False, 'message': 'Erro interno do servidor.'}), 500
         finally:
-            connection.close()
+            if connection.is_connected():
+                connection.close()
     return jsonify({'success': False, 'message': 'Erro de conexão com o banco de dados.'}), 500
 
 @app.route('/logout/<int:user_id>', methods=['POST'])
 def logout(user_id):
     from db_utils import create_db_connection
     connection = create_db_connection()
+    
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     if connection:
         try:
             cursor = connection.cursor()
@@ -352,7 +400,8 @@ def logout(user_id):
             print(f"Erro no logout: {e}")
             return jsonify({'success': False, 'message': 'Erro interno do servidor.'}), 500
         finally:
-            connection.close()
+            if connection.is_connected():
+                connection.close()
     return jsonify({'success': False, 'message': 'Erro de conexão com o banco de dados.'}), 500
 
 
@@ -363,6 +412,11 @@ def logout(user_id):
 def get_classes():
     from db_utils import create_db_connection
     connection = create_db_connection()
+    
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     classes = []
     if connection:
         try:
@@ -376,13 +430,19 @@ def get_classes():
         except Error as e:
             print(f"Erro ao buscar classes: {e}")
         finally:
-            connection.close()
+            if connection.is_connected():
+                connection.close()
     return jsonify(classes)
 
 @app.route('/classes/<int:class_id>', methods=['GET'])
 def get_class_by_id(class_id):
     from db_utils import create_db_connection
     connection = create_db_connection()
+
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     class_item = None
     if connection:
         try:
@@ -401,7 +461,8 @@ def get_class_by_id(class_id):
             print(f"Erro ao buscar aula por ID: {e}")
             return jsonify({'message': 'Erro interno do servidor'}), 500
         finally:
-            connection.close()
+            if connection.is_connected():
+                connection.close()
     return jsonify({'message': 'Erro de conexão com o banco de dados'}), 500
 
 
@@ -417,6 +478,11 @@ def add_class():
         return jsonify({'success': False, 'message': 'Título e Data são obrigatórios.'}), 400
     from db_utils import create_db_connection
     connection = create_db_connection()
+
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     if connection:
         try:
             cursor = connection.cursor()
@@ -431,7 +497,8 @@ def add_class():
             connection.rollback()
             return jsonify({'success': False, 'message': 'Erro interno do servidor.'}), 500
         finally:
-            connection.close()
+            if connection.is_connected():
+                connection.close()
     return jsonify({'success': False, 'message': 'Erro de conexão com o banco de dados.'}), 500
 
 @app.route('/classes/edit/<int:class_id>', methods=['PUT'])
@@ -439,6 +506,11 @@ def edit_class(class_id):
     class_data = request.get_json()
     from db_utils import create_db_connection
     connection = create_db_connection()
+
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     if connection:
         try:
             cursor = connection.cursor()
@@ -476,13 +548,19 @@ def edit_class(class_id):
             connection.rollback()
             return jsonify({'success': False, 'message': 'Erro interno do servidor.'}), 500
         finally:
-            connection.close()
+            if connection.is_connected():
+                connection.close()
     return jsonify({'success': False, 'message': 'Erro de conexão com o banco de dados.'}), 500
 
 @app.route('/classes/delete/<int:class_id>', methods=['DELETE'])
 def delete_class(class_id):
     from db_utils import create_db_connection
     connection = create_db_connection()
+
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     if connection:
         try:
             cursor = connection.cursor()
@@ -499,7 +577,8 @@ def delete_class(class_id):
             connection.rollback()
             return jsonify({'success': False, 'message': 'Erro interno do servidor.'}), 500
         finally:
-            connection.close()
+            if connection.is_connected():
+                connection.close()
     return jsonify({'success': False, 'message': 'Erro de conexão com o banco de dados.'}), 500
 
 # ====================================================================================================
@@ -509,6 +588,11 @@ def delete_class(class_id):
 def get_attendance_records():
     from db_utils import create_db_connection
     connection = create_db_connection()
+
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     records = []
     if connection:
         try:
@@ -529,7 +613,8 @@ def get_attendance_records():
         except Error as e:
             print(f"Erro ao buscar registros de frequência: {e}")
         finally:
-            connection.close()
+            if connection.is_connected():
+                connection.close()
     return jsonify(records)
 
 @app.route('/attendance/student/<int:student_id>', methods=['GET'])
@@ -537,6 +622,11 @@ def get_attendance_by_student(student_id):
 
     from db_utils import create_db_connection
     connection = create_db_connection()
+    
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     records = []
     if connection:
         try:
@@ -559,7 +649,8 @@ def get_attendance_by_student(student_id):
         except Error as e:
             print(f"Erro ao buscar frequência do aluno: {e}")
         finally:
-            connection.close()
+            if connection.is_connected():
+                connection.close()
     return jsonify(records)
 
 
@@ -575,6 +666,11 @@ def add_attendance_record():
     
     from db_utils import create_db_connection
     connection = create_db_connection()
+    
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     if connection:
         try:
             cursor = connection.cursor()
@@ -616,7 +712,8 @@ def add_attendance_record():
             connection.rollback()
             return jsonify({'success': False, 'message': 'Erro interno do servidor.'}), 500
         finally:
-            connection.close()
+            if connection.is_connected():
+                connection.close()
     return jsonify({'success': False, 'message': 'Erro de conexão com o banco de dados.'}), 500
 
 @app.route('/attendance/edit/<int:record_id>', methods=['PUT'])
@@ -629,6 +726,11 @@ def edit_attendance_record(record_id):
     
     from db_utils import create_db_connection
     connection = create_db_connection()
+    
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     if connection:
         try:
             cursor = connection.cursor()
@@ -668,13 +770,19 @@ def edit_attendance_record(record_id):
             connection.rollback()
             return jsonify({'success': False, 'message': 'Erro interno do servidor.'}), 500
         finally:
-            connection.close()
+            if connection.is_connected():
+                connection.close()
     return jsonify({'success': False, 'message': 'Erro de conexão com o banco de dados.'}), 500
 
 @app.route('/attendance/delete/<int:record_id>', methods=['DELETE'])
 def delete_attendance_record(record_id):
     from db_utils import create_db_connection
     connection = create_db_connection()
+    
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     if connection:
         try:
             cursor = connection.cursor()
@@ -717,7 +825,8 @@ def delete_attendance_record(record_id):
             connection.rollback()
             return jsonify({'success': False, 'message': 'Erro interno do servidor.'}), 500
         finally:
-            connection.close()
+            if connection.is_connected():
+                connection.close()
     return jsonify({'success': False, 'message': 'Erro de conexão com o banco de dados.'}), 500
 
 # ====================================================================================================
@@ -727,6 +836,11 @@ def delete_attendance_record(record_id):
 def get_status_alunos():
     from db_utils import create_db_connection
     connection = create_db_connection()
+    
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     statuses = []
     if connection:
         try:
@@ -744,7 +858,8 @@ def get_status_alunos():
             print(f"Erro ao buscar status dos alunos: {e}")
             return jsonify({'message': 'Erro interno do servidor'}), 500
         finally:
-            connection.close()
+            if connection.is_connected():
+                connection.close()
     return jsonify(statuses)
 
 # ADIÇÃO: Rotas para Atividades dos Alunos
@@ -752,6 +867,11 @@ def get_status_alunos():
 def get_atividades_alunos():
     from db_utils import create_db_connection
     connection = create_db_connection()
+    
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     activities = []
     if connection:
         try:
@@ -769,7 +889,8 @@ def get_atividades_alunos():
             print(f"Erro ao buscar atividades dos alunos: {e}")
             return jsonify({'message': 'Erro interno do servidor'}), 500
         finally:
-            connection.close()
+            if connection.is_connected():
+                connection.close()
     return jsonify(activities)
 
 @app.route('/atividades_alunos/update_aula/<int:aluno_id>', methods=['PUT'])
@@ -786,6 +907,11 @@ def update_aula_status(aluno_id):
     
     from db_utils import create_db_connection
     connection = create_db_connection()
+    
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     if connection:
         try:
             cursor = connection.cursor()
@@ -811,7 +937,8 @@ def update_aula_status(aluno_id):
             connection.rollback()
             return jsonify({'success': False, 'message': 'Erro interno do servidor.'}), 500
         finally:
-            connection.close()
+            if connection.is_connected():
+                connection.close()
     return jsonify({'success': False, 'message': 'Erro de conexão com o banco de dados.'}), 500
 
 # ====================================================================================================
@@ -821,6 +948,11 @@ def update_aula_status(aluno_id):
 def get_materials():
     from db_utils import create_db_connection
     connection = create_db_connection()
+    
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     materials = []
     if connection:
         try:
@@ -834,7 +966,8 @@ def get_materials():
         except Error as e:
             print(f"Erro ao buscar materiais: {e}")
         finally:
-            connection.close()
+            if connection.is_connected():
+                connection.close()
     return jsonify(materials)
 
 @app.route('/materials/upload', methods=['POST'])
@@ -856,6 +989,14 @@ def upload_material():
 
         from db_utils import create_db_connection
         connection = create_db_connection()
+        
+        # MELHORIA DE DISPONIBILIDADE
+        if not connection:
+            # Tenta remover o arquivo salvo se o BD estiver offline
+            if os.path.exists(filepath):
+                os.remove(filepath)
+            return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
         if connection:
             try:
                 cursor = connection.cursor()
@@ -874,7 +1015,8 @@ def upload_material():
                 connection.rollback()
                 return jsonify({'success': False, 'message': 'Erro interno do servidor ao registrar material.'}), 500
             finally:
-                connection.close()
+                if connection.is_connected():
+                    connection.close()
         return jsonify({'success': False, 'message': 'Erro de conexão com o banco de dados.'}), 500
     return jsonify({'success': False, 'message': 'Erro no upload do arquivo.'}), 500
 
@@ -888,6 +1030,11 @@ def edit_material(material_id):
     material_data = request.get_json()
     from db_utils import create_db_connection
     connection = create_db_connection()
+    
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     if connection:
         try:
             cursor = connection.cursor()
@@ -919,13 +1066,19 @@ def edit_material(material_id):
             connection.rollback()
             return jsonify({'success': False, 'message': 'Erro interno do servidor.'}), 500
         finally:
-            connection.close()
+            if connection.is_connected():
+                connection.close()
     return jsonify({'success': False, 'message': 'Erro de conexão com o banco de dados.'}), 500
 
 @app.route('/materials/delete/<int:material_id>', methods=['DELETE'])
 def delete_material(material_id):
     from db_utils import create_db_connection
     connection = create_db_connection()
+    
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     if connection:
         try:
             cursor = connection.cursor(dictionary=True)
@@ -952,7 +1105,8 @@ def delete_material(material_id):
             connection.rollback()
             return jsonify({'success': False, 'message': 'Erro interno do servidor.'}), 500
         finally:
-            connection.close()
+            if connection.is_connected():
+                connection.close()
     return jsonify({'success': False, 'message': 'Erro de conexão com o banco de dados.'}), 500
 
 # ====================================================================================================
@@ -962,6 +1116,11 @@ def delete_material(material_id):
 def get_avisos():
     from db_utils import create_db_connection
     connection = create_db_connection()
+    
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     avisos = []
     if connection:
         try:
@@ -981,7 +1140,8 @@ def get_avisos():
         except Error as e:
             print(f"Erro ao buscar avisos: {e}")
         finally:
-            connection.close()
+            if connection.is_connected():
+                connection.close()
     return jsonify(avisos)
 
 @app.route('/avisos/add', methods=['POST'])
@@ -995,6 +1155,11 @@ def add_aviso():
         return jsonify({'success': False, 'message': 'Título, mensagem e ID do usuário são obrigatórios.'}), 400
     from db_utils import create_db_connection
     connection = create_db_connection()
+    
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     if connection:
         try:
             cursor = connection.cursor()
@@ -1009,13 +1174,19 @@ def add_aviso():
             connection.rollback()
             return jsonify({'success': False, 'message': 'Erro interno do servidor.'}), 500
         finally:
-            connection.close()
+            if connection.is_connected():
+                connection.close()
     return jsonify({'success': False, 'message': 'Erro de conexão com o banco de dados.'}), 500
 
 @app.route('/avisos/delete/<int:aviso_id>', methods=['DELETE'])
 def delete_aviso(aviso_id):
     from db_utils import create_db_connection
     connection = create_db_connection()
+    
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     if connection:
         try:
             cursor = connection.cursor()
@@ -1032,7 +1203,8 @@ def delete_aviso(aviso_id):
             connection.rollback()
             return jsonify({'success': False, 'message': 'Erro interno do servidor.'}), 500
         finally:
-            connection.close()
+            if connection.is_connected():
+                connection.close()
     return jsonify({'success': False, 'message': 'Erro de conexão com o banco de dados.'}), 500
 
 

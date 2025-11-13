@@ -219,18 +219,33 @@
         });
 
         async function fetchUserList() {
+            const tbody = document.getElementById('userListTableBody');
             try {
                 const response = await fetch('http://127.0.0.1:5000/users');
+                
+                // MELHORIA DE DISPONIBILIDADE
                 if (!response.ok) {
+                    if (response.status === 503) {
+                        const errorData = await response.json();
+                        if (errorData.message === 'MAINTENANCE_MODE') {
+                            throw new Error('MAINTENANCE_MODE');
+                        }
+                    }
                     throw new Error(`Erro HTTP! Status: ${response.status}`);
                 }
+                
                 const users = await response.json();
                 displayUserList(users);
             } catch (error) {
                 console.error('Erro ao buscar lista de usuários:', error);
-                const tbody = document.getElementById('userListTableBody');
                 if (tbody) {
-                    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: red;">Erro ao carregar lista de usuários.</td></tr>`;
+                    if (error.message === 'MAINTENANCE_MODE') {
+                        // Tática de Graceful Degradation (UI)
+                        showMessageModal('Sistema em Manutenção', 'Não foi possível conectar ao banco de dados. Tente novamente mais tarde.', 'warning');
+                        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: orange;">Sistema em manutenção. Tente mais tarde.</td></tr>`;
+                    } else {
+                        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: red;">Erro ao carregar lista de usuários.</td></tr>`;
+                    }
                 }
             }
         }
@@ -301,6 +316,13 @@
                         body: JSON.stringify(userData),
                     });
                     const data = await response.json();
+                    
+                    // MELHORIA DE DISPONIBILIDADE
+                    if (!response.ok && response.status === 503 && data.message === 'MAINTENANCE_MODE') {
+                        showMessageModal('Sistema em Manutenção', 'O sistema está temporariamente indisponível. Tente novamente mais tarde.', 'warning');
+                        return;
+                    }
+
                     if (data.success) {
                         showMessageModal('Sucesso!', 'Usuário adicionado com sucesso!', 'success');
                         closeAddUserModal();
@@ -319,7 +341,14 @@
             currentEditingUserId = userId;
             try {
                 const response = await fetch(`http://127.0.0.1:5000/users/${userId}`);
-                if (!response.ok) throw new Error(`Erro HTTP! Status: ${response.status}`);
+                
+                // MELHORIA DE DISPONIBILIDADE
+                if (!response.ok) {
+                    if (response.status === 503) {
+                         throw new Error('MAINTENANCE_MODE');
+                    }
+                    throw new Error(`Erro HTTP! Status: ${response.status}`);
+                }
                 
                 const user = await response.json();
                 document.getElementById('editUserId').value = user.id;
@@ -332,7 +361,11 @@
 
             } catch (error) {
                 console.error('Erro ao buscar dados do usuário para edição:', error);
-                showMessageModal('Erro', 'Não foi possível carregar os dados do usuário para edição. Tente novamente.', 'error');
+                if (error.message === 'MAINTENANCE_MODE') {
+                    showMessageModal('Sistema em Manutenção', 'Não foi possível carregar os dados do usuário. Tente novamente mais tarde.', 'warning');
+                } else {
+                    showMessageModal('Erro', 'Não foi possível carregar os dados do usuário para edição. Tente novamente.', 'error');
+                }
             }
         }
 
@@ -363,6 +396,13 @@
                         body: JSON.stringify(userData),
                     });
                     const data = await response.json();
+
+                    // MELHORIA DE DISPONIBILIDADE
+                    if (!response.ok && response.status === 503 && data.message === 'MAINTENANCE_MODE') {
+                        showMessageModal('Sistema em Manutenção', 'O sistema está temporariamente indisponível. Tente novamente mais tarde.', 'warning');
+                        return;
+                    }
+
                     if (data.success) {
                         showMessageModal('Sucesso!', 'Usuário atualizado com sucesso!', 'success');
                         closeEditUserModal();
@@ -399,6 +439,13 @@
                     method: 'DELETE',
                 });
                 const data = await response.json();
+
+                // MELHORIA DE DISPONIBILIDADE
+                if (!response.ok && response.status === 503 && data.message === 'MAINTENANCE_MODE') {
+                    showMessageModal('Sistema em Manutenção', 'O sistema está temporariamente indisponível. Tente novamente mais tarde.', 'warning');
+                    return;
+                }
+
                 if (data.success) {
                     showMessageModal('Sucesso!', 'Usuário excluído com sucesso!', 'success');
                     closeDeleteUserConfirmModal();

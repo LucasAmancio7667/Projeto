@@ -13,6 +13,11 @@ def get_alunos():
     offset = (page - 1) * limit
 
     connection = create_db_connection()
+    
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     alunos = []
     total_alunos = 0
     if connection:
@@ -55,7 +60,8 @@ def get_alunos():
         except Error as e:
             print(f"Erro ao buscar alunos: {e}")
         finally:
-            connection.close()
+            if connection.is_connected():
+                connection.close()
             
     return jsonify({
         'total': total_alunos,
@@ -66,6 +72,11 @@ def get_alunos():
 
 def get_aluno_by_id(aluno_id):
     connection = create_db_connection()
+    
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     aluno = None
     if connection:
         try:
@@ -84,7 +95,8 @@ def get_aluno_by_id(aluno_id):
             print(f"Erro ao buscar aluno por ID: {e}")
             return jsonify({'message': 'Erro interno do servidor'}), 500
         finally:
-            connection.close()
+            if connection.is_connected():
+                connection.close()
     return jsonify({'message': 'Erro de conexão com o banco de dados'}), 500
 
 @alunos_bp.route('/alunos/add', methods=['POST'])
@@ -96,6 +108,11 @@ def add_aluno():
         return jsonify({'success': False, 'message': 'Nome e Turma são obrigatórios'}), 400
 
     connection = create_db_connection()
+    
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     if connection:
         try:
             cursor = connection.cursor()
@@ -164,6 +181,11 @@ def add_aluno():
 @alunos_bp.route('/alunos/delete/<int:aluno_id>', methods=['DELETE'])
 def delete_aluno(aluno_id):
     connection = create_db_connection()
+    
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     if connection:
         try:
             cursor = connection.cursor()
@@ -179,8 +201,9 @@ def delete_aluno(aluno_id):
             connection.rollback()
             return jsonify({'success': False, 'message': 'Erro interno do servidor'}), 500
         finally:
-            connection.close()
-    return jsonify({'success': False, 'message': 'Erro de conexão com o banco de dados'}), 500
+            if connection.is_connected():
+                connection.close()
+    return jsonify({'success': False, 'message': 'Erro de conexão com o banco de dados.'}), 500
 
 @alunos_bp.route('/alunos/edit/<int:aluno_id>', methods=['PUT'])
 def edit_aluno(aluno_id):
@@ -190,6 +213,11 @@ def edit_aluno(aluno_id):
         return jsonify({'success': False, 'message': 'ID do aluno e Nome são obrigatórios'}), 400
 
     connection = create_db_connection()
+    
+    # MELHORIA DE DISPONIBILIDADE
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
     if connection:
         try:
             cursor = connection.cursor()

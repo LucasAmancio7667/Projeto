@@ -3,7 +3,6 @@ from mysql.connector import Error
 from faker import Faker
 import random
 
-# Configurações do seu banco de dados
 db_config = {
     'host': 'localhost',
     'user': 'root',
@@ -11,7 +10,7 @@ db_config = {
     'database': 'scratch'
 }
 
-# Inicializa o Faker para gerar dados em português do Brasil
+
 fake = Faker('pt_BR')
 
 def insert_fake_students(num_students=1000):

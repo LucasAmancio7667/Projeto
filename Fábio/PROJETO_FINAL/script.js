@@ -53,7 +53,15 @@ document.addEventListener("DOMContentLoaded", () => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password }),
                 });
+                
                 const data = await response.json();
+
+                // MELHORIA DE DISPONIBILIDADE (Graceful Degradation)
+                if (!response.ok && response.status === 503 && data.message === 'MAINTENANCE_MODE') {
+                    showMessageModal('Sistema em Manutenção', 'O sistema está temporariamente indisponível. Tente novamente mais tarde.', 'warning');
+                    return;
+                }
+                
                 if (data.success) {
                     localStorage.setItem("isLoggedIn", "true");
                     localStorage.setItem("userId", data.user.id);
@@ -104,9 +112,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const userId = localStorage.getItem("userId");
         if (userId) {
             try {
+                // Não precisamos verificar o 503 aqui, apenas deslogamos o usuário
                 await fetch(`http://127.0.0.1:5000/logout/${userId}`, { method: 'POST' });
             } catch (error) {
-                console.error('Erro ao atualizar status de logout:', error);
+                console.error('Erro ao atualizar status de logout (ignorado):', error);
             }
         }
         localStorage.clear();
@@ -169,6 +178,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
             try {
                 const response = await fetch('http://127.0.0.1:5000/avisos');
+
+                // MELHORIA DE DISPONIBILIDADE
+                if (!response.ok && response.status === 503) {
+                    throw new Error('MAINTENANCE_MODE');
+                }
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP! Status: ${response.status}`);
+                }
+
                 const avisos = await response.json();
 
                 avisosList.innerHTML = '';
@@ -199,7 +217,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             } catch (error) {
                 console.error('Erro ao carregar avisos:', error);
-                avisosList.innerHTML = '<p style="color: red;">Não foi possível carregar os avisos.</p>';
+                if (error.message === 'MAINTENANCE_MODE') {
+                    avisosList.innerHTML = '<p style="color: orange;">Serviço de avisos temporariamente indisponível.</p>';
+                } else {
+                    avisosList.innerHTML = '<p style="color: red;">Não foi possível carregar os avisos.</p>';
+                }
             }
         }
 
@@ -210,6 +232,12 @@ document.addEventListener("DOMContentLoaded", () => {
                         method: 'DELETE'
                     });
                     const data = await response.json();
+
+                    if (!response.ok && response.status === 503 && data.message === 'MAINTENANCE_MODE') {
+                        showMessageModal('Sistema em Manutenção', 'O sistema está temporariamente indisponível. Tente novamente mais tarde.', 'warning');
+                        return;
+                    }
+
                     if (data.success) {
                         showMessageModal('Sucesso!', 'Aviso apagado com sucesso.', 'success');
                         loadAvisos();
@@ -242,6 +270,12 @@ document.addEventListener("DOMContentLoaded", () => {
                         body: JSON.stringify({ titulo, mensagem, user_id: userId })
                     });
                     const data = await response.json();
+
+                    if (!response.ok && response.status === 503 && data.message === 'MAINTENANCE_MODE') {
+                        showMessageModal('Sistema em Manutenção', 'O sistema está temporariamente indisponível. Tente novamente mais tarde.', 'warning');
+                        return;
+                    }
+
                     if (data.success) {
                         showMessageModal('Sucesso!', 'Aviso publicado com sucesso!', 'success');
                         addAvisoForm.reset();
@@ -272,6 +306,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
             try {
                 const response = await fetch('http://127.0.0.1:5000/avisos');
+                
+                // MELHORIA DE DISPONIBILIDADE
+                if (!response.ok && response.status === 503) {
+                    throw new Error('MAINTENANCE_MODE');
+                }
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP! Status: ${response.status}`);
+                }
+
                 const avisos = await response.json();
 
                 studentAvisosList.innerHTML = '';
@@ -299,7 +342,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             } catch (error) {
                 console.error('Erro ao carregar avisos:', error);
-                studentAvisosList.innerHTML = '<p style="color: red;">Não foi possível carregar os avisos.</p>';
+                 if (error.message === 'MAINTENANCE_MODE') {
+                    studentAvisosList.innerHTML = '<p style="color: orange;">Serviço de avisos temporariamente indisponível.</p>';
+                } else {
+                    studentAvisosList.innerHTML = '<p style="color: red;">Não foi possível carregar os avisos.</p>';
+                }
             }
         }
         
@@ -319,11 +366,36 @@ window.abrirWhatsApp = function() {
 let currentPage = 1;
 const rowsPerPage = 20;
 
+// Função de utilitário para tratar erros de Fetch
+async function handleFetchError(error, tbody, colspan) {
+    console.error('Erro na solicitação:', error);
+    let errorMessage = `Erro ao carregar dados.`;
+    let errorColor = 'red';
+
+    if (error.message === 'MAINTENANCE_MODE') {
+        errorMessage = 'Sistema em manutenção. Tente novamente mais tarde.';
+        errorColor = 'orange';
+        showMessageModal('Sistema em Manutenção', 'Não foi possível conectar ao banco de dados. Tente novamente mais tarde.', 'warning');
+    }
+
+    if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="${colspan}" style="text-align: center; color: ${errorColor};">${errorMessage}</td></tr>`;
+    }
+}
+
 window.fetchAlunosFromBackend = async function(page = 1, searchTerm = "") {
     currentPage = page;
+    const tbody = document.querySelector('#table_info_alunos tbody');
+    
     try {
         const response = await fetch(`http://127.0.0.1:5000/alunos?page=${page}&limit=${rowsPerPage}&search=${searchTerm}`);
-        if (!response.ok) throw new Error(`Erro HTTP! Status: ${response.status}`);
+        
+        if (!response.ok) {
+            if (response.status === 503) {
+                throw new Error('MAINTENANCE_MODE');
+            }
+            throw new Error(`Erro HTTP! Status: ${response.status}`);
+        }
         
         const data = await response.json();
         const alunos = data.alunos;
@@ -333,9 +405,8 @@ window.fetchAlunosFromBackend = async function(page = 1, searchTerm = "") {
         setupPagination(totalAlunos, page, searchTerm);
 
     } catch (error) {
-        console.error('Erro ao buscar alunos:', error);
-        const tbody = document.querySelector('#table_info_alunos tbody');
-        if (tbody) tbody.innerHTML = `<tr><td colspan="12" style="text-align: center; color: red;">Erro ao carregar dados dos alunos.</td></tr>`;
+        // Usa a nova função de tratamento de erro
+        handleFetchError(error, tbody, 13); // 13 colunas na tabela de alunos
     }
 };
 
@@ -344,7 +415,7 @@ function displayAlunosInInfoTable(alunos) {
     if (!tbody) return;
     tbody.innerHTML = '';
     if (alunos.length === 0) {
-        tbody.innerHTML = `<<tr><td colspan="13" style="text-align: center;">Nenhum aluno encontrado.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="13" style="text-align: center;">Nenhum aluno encontrado.</td></tr>`;
         return;
     }
     alunos.forEach(aluno => {
@@ -418,6 +489,13 @@ async function sendAlunoToBackend(alunoData) {
             body: JSON.stringify(alunoData),
         });
         const data = await response.json();
+
+        // MELHORIA DE DISPONIBILIDADE
+        if (!response.ok && response.status === 503 && data.message === 'MAINTENANCE_MODE') {
+            showMessageModal('Sistema em Manutenção', 'O sistema está temporariamente indisponível. Tente novamente mais tarde.', 'warning');
+            return;
+        }
+
         if (data.success) {
             let successMessage = 'Aluno adicionado com sucesso!';
             if (data.generated_username && data.generated_password) {
@@ -438,7 +516,14 @@ async function sendAlunoToBackend(alunoData) {
 window.editAluno = async function(alunoId) {
     try {
         const response = await fetch(`http://127.0.0.1:5000/alunos/${alunoId}`);
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        
+        if (!response.ok) {
+            if (response.status === 503) {
+                throw new Error('MAINTENANCE_MODE');
+            }
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        
         const aluno = await response.json();
 
         document.getElementById('editAlunoId').value = aluno.id;
@@ -453,14 +538,16 @@ window.editAluno = async function(alunoId) {
         document.getElementById('editEscolaridade').value = aluno.escolaridade;
         document.getElementById('editEscola').value = aluno.escola;
         document.getElementById('editResponsavel').value = aluno.responsavel;
-        
-        // LINHA CRUCIAL (AGORA CORRETA E DESCOMENTADA)
         document.getElementById('editStatusMatricula').value = aluno.status_matricula || 'Ativo';
 
         document.getElementById('editAlunoModal').classList.remove('hidden');
     } catch (error) {
         console.error('Erro ao buscar dados do aluno para edição:', error);
-        showMessageModal('Erro', 'Não foi possível carregar os dados do aluno para edição.', 'error');
+        if (error.message === 'MAINTENANCE_MODE') {
+             showMessageModal('Sistema em Manutenção', 'Não foi possível carregar os dados do aluno. Tente novamente mais tarde.', 'warning');
+        } else {
+            showMessageModal('Erro', 'Não foi possível carregar os dados do aluno para edição.', 'error');
+        }
     }
 };
 
@@ -473,6 +560,13 @@ async function sendEditedAlunoToBackend(alunoId, alunoData) {
             body: JSON.stringify(alunoData),
         });
         const data = await response.json();
+
+        // MELHORIA DE DISPONIBILIDADE
+        if (!response.ok && response.status === 503 && data.message === 'MAINTENANCE_MODE') {
+            showMessageModal('Sistema em Manutenção', 'O sistema está temporariamente indisponível. Tente novamente mais tarde.', 'warning');
+            return;
+        }
+
         if (data.success) {
             showMessageModal('Sucesso!', 'Aluno atualizado com sucesso!', 'success');
             closeEditAlunoModal();
@@ -490,6 +584,13 @@ window.deleteAluno = async function(alunoId) {
         try {
             const response = await fetch(`http://127.0.0.1:5000/alunos/delete/${alunoId}`, { method: 'DELETE' });
             const data = await response.json();
+
+            // MELHORIA DE DISPONIBILIDADE
+            if (!response.ok && response.status === 503 && data.message === 'MAINTENANCE_MODE') {
+                showMessageModal('Sistema em Manutenção', 'O sistema está temporariamente indisponível. Tente novamente mais tarde.', 'warning');
+                return;
+            }
+
             if (data.success) {
                 showMessageModal('Sucesso!', 'Aluno e utilizador de login excluídos com sucesso!', 'success');
                 await window.fetchAlunosFromBackend(currentPage);
@@ -544,7 +645,13 @@ window.fetchStudentOverallStatusFromBackend = async function() {
 
     try {
         const response = await fetch('http://127.0.0.1:5000/status_alunos');
-        if (!response.ok) throw new Error(`Erro HTTP! Status: ${response.status}`);
+        
+        if (!response.ok) {
+            if (response.status === 503) {
+                throw new Error('MAINTENANCE_MODE');
+            }
+            throw new Error(`Erro HTTP! Status: ${response.status}`);
+        }
         
         const statuses = await response.json();
         
@@ -568,8 +675,8 @@ window.fetchStudentOverallStatusFromBackend = async function() {
         });
 
     } catch (error) {
-        console.error('Erro ao buscar status dos alunos:', error);
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: red;">Erro ao carregar dados.</td></tr>`;
+        // Usa a nova função de tratamento de erro
+        handleFetchError(error, tbody, 5); // 5 colunas
     }
 };
 
@@ -579,7 +686,13 @@ window.fetchLoginAlunosFromBackend = async function() {
 
     try {
         const response = await fetch('http://127.0.0.1:5000/users');
-        if (!response.ok) throw new Error(`Erro HTTP! Status: ${response.status}`);
+        
+        if (!response.ok) {
+            if (response.status === 503) {
+                throw new Error('MAINTENANCE_MODE');
+            }
+            throw new Error(`Erro HTTP! Status: ${response.status}`);
+        }
         
         const users = await response.json();
         
@@ -607,8 +720,8 @@ window.fetchLoginAlunosFromBackend = async function() {
         });
 
     } catch (error) {
-        console.error('Erro ao buscar utilizadores de login:', error);
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: red;">Erro ao carregar dados.</td></tr>`;
+        // Usa a nova função de tratamento de erro
+        handleFetchError(error, tbody, 5); // 5 colunas
     }
 };
 
