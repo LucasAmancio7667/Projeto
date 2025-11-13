@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Definir Nova Senha - Curso de Scratch</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="login-page">
+    <div id="messageModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="messageModalTitle"></h3>
+                <button class="close-btn" onclick="closeMessageModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p id="messageModalText"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn primary" onclick="closeMessageModal()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="login-container">
+        <div class="welcome-section">
+            <h1>Segurança</h1>
+            <p>Por motivos de segurança, você deve definir uma nova senha no seu primeiro acesso.</p>
+            <div class="logo">
+                <img src="img/scratch.png" height="150" width="150" alt="Scratch Logo">
+            </div>
+        </div>
+        <div class="login-section">
+            <h2>Nova Senha</h2>
+            <form id="changePasswordForm">
+                <div class="form-group">
+                    <input type="password" id="newPassword" placeholder="Digite a nova senha" required minlength="6">
+                </div>
+                <div class="form-group" style="margin-top: 15px;">
+                    <input type="password" id="confirmPassword" placeholder="Confirme a nova senha" required minlength="6">
+                </div>
+                <button type="submit" class="action-btn primary" style="width: 100%; margin-top: 20px;">SALVAR SENHA</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Verifica se o usuário está logado, senão manda de volta pro login
+            if (!localStorage.getItem("isLoggedIn")) {
+                window.location.href = "index.html";
+                return;
+            }
+
+            const form = document.getElementById('changePasswordForm');
+            
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                const userId = localStorage.getItem('userId');
+
+                if (newPassword !== confirmPassword) {
+                    showMessageModal('Erro', 'As senhas não coincidem. Tente novamente.', 'error');
+                    return;
+                }
+
+                if (newPassword.length < 6) {
+                    showMessageModal('Atenção', 'A senha deve ter pelo menos 6 caracteres.', 'warning');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('http://127.0.0.1:5000/users/force-change-password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            user_id: userId,
+                            new_password: newPassword 
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        // Atualiza o fluxo: remove a obrigação de mudar senha (embora o backend já tenha feito isso no banco)
+                        // E redireciona para o dashboard correto
+                        const userRole = localStorage.getItem('userRole');
+                        
+                        // Exibe modal de sucesso e redireciona ao fechar (ou após um delay)
+                        showMessageModal('Sucesso', 'Senha alterada com sucesso! Você será redirecionado.', 'success');
+                        
+                        setTimeout(() => {
+                            window.location.href = userRole === 'teacher' ? 'teacher-dashboard.html' : 'dashboard.html';
+                        }, 2000);
+                    } else {
+                        showMessageModal('Erro', data.message || 'Não foi possível alterar a senha.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Erro:', error);
+                    showMessageModal('Erro de Conexão', 'Falha ao comunicar com o servidor.', 'error');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

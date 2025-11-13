@@ -346,7 +346,11 @@ def login():
     if connection:
         try:
             cursor = connection.cursor(dictionary=True)
-            query = "SELECT id, username, password_hash, full_name, role, student_id FROM users WHERE username = %s"
+            
+            # --- ALTERAÇÃO DE SEGURANÇA (Buscar Flag) ---
+            query = "SELECT id, username, password_hash, full_name, role, student_id, must_change_password FROM users WHERE username = %s"
+            # --- FIM DA ALTERAÇÃO ---
+            
             cursor.execute(query, (username,))
             user = cursor.fetchone()
             cursor.close()
@@ -358,6 +362,7 @@ def login():
                 connection.commit()
                 cursor_update.close()
 
+                # --- ALTERAÇÃO DE SEGURANÇA (Enviar Flag) ---
                 return jsonify({
                     'success': True,
                     'message': 'Login bem-sucedido!',
@@ -366,9 +371,11 @@ def login():
                         'username': user['username'],
                         'full_name': user['full_name'],
                         'role': user['role'],
-                        'student_id': user['student_id']
+                        'student_id': user['student_id'],
+                        'must_change_password': user['must_change_password'] # <-- Linha Adicionada
                     }
                 }), 200
+                # --- FIM DA ALTERAÇÃO ---
             else:
                 return jsonify({'success': False, 'message': 'Nome de usuário ou senha incorretos.'}), 401
         except Error as e:
@@ -1213,6 +1220,41 @@ def init_db_command():
     """Limpa os dados existentes e cria novas tabelas."""
     setup_database()
     click.echo("Banco de dados inicializado.")
+
+@app.route('/users/force-change-password', methods=['POST'])
+def force_change_password():
+    data = request.get_json()
+    user_id = data.get('user_id')
+    new_password = data.get('new_password')
+
+    if not user_id or not new_password:
+        return jsonify({'success': False, 'message': 'Dados incompletos.'}), 400
+
+    # Gera o hash da nova senha
+    new_hashed_password = generate_password_hash(new_password)
+
+    from db_utils import create_db_connection
+    connection = create_db_connection()
+    
+    if not connection:
+        return jsonify({'success': False, 'message': 'MAINTENANCE_MODE'}), 503
+
+    try:
+        cursor = connection.cursor()
+        # Atualiza a senha e define must_change_password como FALSE (0)
+        query = "UPDATE users SET password_hash = %s, must_change_password = 0 WHERE id = %s"
+        cursor.execute(query, (new_hashed_password, user_id))
+        connection.commit()
+        cursor.close()
+        
+        return jsonify({'success': True, 'message': 'Senha alterada com sucesso!'}), 200
+
+    except Error as e:
+        print(f"Erro ao alterar senha: {e}")
+        return jsonify({'success': False, 'message': 'Erro interno do servidor.'}), 500
+    finally:
+        if connection.is_connected():
+            connection.close()
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

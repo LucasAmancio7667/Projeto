@@ -164,7 +164,7 @@ def add_aluno():
                 'success': True,
                 'message': 'Aluno e credenciais de login adicionados com sucesso!',
                 'generated_username': user_to_create['username'],
-                'generated_password': user_to_create['generated_password']
+                'generated_password': user_to_create['generated_password'] 
             }), 201
 
         except Error as e:

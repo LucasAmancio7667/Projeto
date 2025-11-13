@@ -69,7 +69,17 @@ document.addEventListener("DOMContentLoaded", () => {
                     localStorage.setItem("userRole", data.user.role);
                     localStorage.setItem("userName", data.user.full_name);
                     localStorage.setItem("userStudentId", data.user.student_id);
-                    window.location.href = data.user.role === "teacher" ? "teacher-dashboard.html" : "dashboard.html";
+                    
+                    // --- ALTERAÇÃO DE SEGURANÇA (Mudar Senha) ---
+                    if (data.user.must_change_password) {
+                        // 1. Se o utilizador DEVE mudar a senha, redireciona
+                        window.location.href = "mudar-senha.html"; 
+                    } else {
+                        // 2. Senão, vai para o dashboard normal
+                        window.location.href = data.user.role === "teacher" ? "teacher-dashboard.html" : "dashboard.html";
+                    }
+                    // --- FIM DA ALTERAÇÃO ---
+
                 } else {
                     showMessageModal('Erro no Login', data.message || 'Erro desconhecido.', 'error');
                 }
@@ -498,10 +508,14 @@ async function sendAlunoToBackend(alunoData) {
 
         if (data.success) {
             let successMessage = 'Aluno adicionado com sucesso!';
+            
+            // LÓGICA CORRIGIDA
             if (data.generated_username && data.generated_password) {
                 successMessage += `\n\nCredenciais de Login:\nUsuário: ${data.generated_username}\nSenha: ${data.generated_password}`;
             }
-            showMessageModal('Sucesso!', successMessage, 'success');
+            showMessageModal('Sucesso!', successMessage + "\n\nInforme ao aluno que ele deverá alterar esta senha no primeiro login.", 'success');
+            // FIM DA CORREÇÃO
+
             closeAddAlunoModal();
             await window.fetchAlunosFromBackend(currentPage); 
         } else {

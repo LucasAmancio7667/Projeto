@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS users (
     total_logins INT DEFAULT 0,
     online_status VARCHAR(20) DEFAULT 'Offline',
     data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP, 
+    must_change_password BOOLEAN DEFAULT TRUE,
     FOREIGN KEY (student_id) REFERENCES alunos(id) ON DELETE SET NULL
 );
 
@@ -135,3 +136,9 @@ DROP FOREIGN KEY users_ibfk_1;
 ALTER TABLE users
 ADD CONSTRAINT fk_student_id_cascade -- Dando um nome mais descritivo para a nova constraint
 FOREIGN KEY (student_id) REFERENCES alunos(id) ON DELETE CASCADE;
+
+
+ALTER TABLE users
+ADD COLUMN must_change_password BOOLEAN DEFAULT TRUE;
+
+UPDATE users SET must_change_password = FALSE WHERE username = 'professor';
