@@ -36,7 +36,7 @@ def create_db_connection():
 # PADRÃO TEMPLATE METHOD: CENTRALIZAÇÃO DO BOILERPLATE DE TRANSAÇÃO
 # ====================================================================================================
 
-def execute_db_transaction(op_function, *args, rollback_message='Erro interno do servidor.', **kwargs):
+def execute_db_transaction(op_function, *args, rollback_message='Erro interno do servidor.', **kwargs):#L39-L123
     """
     Template Method para operações de escrita (INSERT, UPDATE, DELETE).
     Garante que commit/rollback e o fechamento da conexão sejam sempre executados.
