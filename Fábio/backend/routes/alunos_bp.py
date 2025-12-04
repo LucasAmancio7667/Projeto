@@ -51,10 +51,10 @@ def get_alunos():
     limit = request.args.get('limit', 20, type=int)
     search = request.args.get('search', "", type=str)
     offset = (page - 1) * limit
-
+"""
     # CHAMA O TEMPLATE METHOD DE LEITURA
     return execute_db_query(_get_alunos_logic, page=page, limit=limit, search=search, offset=offset, error_message='Erro ao buscar alunos')
-
+"""
 
 def _get_aluno_by_id_logic(connection, cursor, aluno_id):
     query = "SELECT id, turma, nome, email, telefone, data_nascimento, rg, cpf, endereco, escolaridade, escola, responsavel FROM alunos WHERE id = %s"
@@ -129,9 +129,9 @@ def _add_aluno_logic(connection, cursor, aluno_data):
 @alunos_bp.route('/alunos/add', methods=['POST'])
 def add_aluno():
     aluno_data = request.get_json()
-    # CHAMA O TEMPLATE METHOD DE ESCRITA
+    """# CHAMA O TEMPLATE METHOD DE ESCRITA
     return execute_db_transaction(_add_aluno_logic, aluno_data=aluno_data, rollback_message='Erro interno do servidor')
-
+    """
 
 def _delete_aluno_logic(connection, cursor, aluno_id):
     # A FOREIGN KEY com ON DELETE CASCADE na tabela 'alunos' é quem vai limpar 'users', 'status_alunos', etc.
