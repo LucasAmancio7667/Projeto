@@ -36,7 +36,7 @@ def serve_static_files(filename):
 # ROTAS DE ADMINISTRAÇÃO (Template Method)
 # ====================================================================================================
 
-def _get_dashboard_stats_logic(connection, cursor):
+"""def _get_dashboard_stats_logic(connection, cursor):
     # Contar alunos
     cursor.execute("SELECT COUNT(*) as total_alunos FROM alunos")
     total_alunos = cursor.fetchone()['total_alunos']
@@ -83,7 +83,7 @@ def get_users():
 def _get_user_by_id_logic(connection, cursor, user_id):
     query = "SELECT id, username, full_name, role, student_id, last_login, total_logins, online_status FROM users WHERE id = %s"
     cursor.execute(query, (user_id,))
-    user = cursor.fetchone()
+    user = cursor.fetchone()"""
     
     if user:
         if user.get('last_login'):
