@@ -36,11 +36,8 @@ def create_db_connection():
 # PADRÃO TEMPLATE METHOD: CENTRALIZAÇÃO DO BOILERPLATE DE TRANSAÇÃO
 # ====================================================================================================
 
-def execute_db_transaction(op_function, *args, rollback_message='Erro interno do servidor.', **kwargs):#L39-L123
-    """
-    Template Method para operações de escrita (INSERT, UPDATE, DELETE).
-    Garante que commit/rollback e o fechamento da conexão sejam sempre executados.
-    """
+"""def execute_db_transaction(op_function, *args, rollback_message='Erro interno do servidor.', **kwargs):#L39-L123
+  
     connection = create_db_connection()
 
     # Template Step 1 (Hook): Checa a disponibilidade
@@ -90,10 +87,7 @@ def execute_db_transaction(op_function, *args, rollback_message='Erro interno do
             connection.close()
 
 def execute_db_query(query_function, *args, error_message='Erro interno do servidor', **kwargs):
-    """
-    Template Method para operações de leitura (SELECT).
-    Apenas gerencia a conexão e o cursor, sem commit/rollback.
-    """
+   
     connection = create_db_connection()
     
     if not connection:
@@ -105,7 +99,7 @@ def execute_db_query(query_function, *args, error_message='Erro interno do servi
         
         # O 'Hook' ou 'Método Primitivo' a ser implementado por cada rota
         # query_function deve retornar (response_data, status_code)
-        response_data, status_code = query_function(connection, cursor, *args, **kwargs)
+        response_data, status_code = query_function(connection, cursor, *args, **kwargs)"""
         
         return jsonify(response_data), status_code
         
